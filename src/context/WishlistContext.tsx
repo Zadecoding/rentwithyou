@@ -14,29 +14,28 @@ interface WishlistContextType {
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
-  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
-  const { user } = useAuth();
-  const supabase = createClient();
-
-  // Load initial wishlist from localStorage
-  useEffect(() => {
+  // Initialize with localStorage directly to avoid cascading renders
+  const [wishlistIds, setWishlistIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
     try {
       const stored = localStorage.getItem('rw_wishlist');
-      if (stored) {
-        setWishlistIds(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.error('Error reading wishlist from localStorage:', e);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
     }
-  }, []);
+  });
+
+  const { user } = useAuth();
+  const supabase = createClient();
 
   // When user logs in with Supabase, fetch their remote wishlist & merge local items
   useEffect(() => {
     if (!user || !supabase) return;
 
+    let isMounted = true;
+
     const syncWishlist = async () => {
       try {
-        // Fetch from Supabase
         const { data: remoteData, error } = await supabase
           .from('wishlists')
           .select('property_id')
@@ -47,11 +46,10 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
         const remoteIds = remoteData ? remoteData.map((item) => item.property_id) : [];
-
-        // Check if there are local guest items to merge
         const localItems = JSON.parse(localStorage.getItem('rw_wishlist') || '[]') as string[];
-        const itemsToInsert = localItems.filter((id) => !remoteIds.includes(id));
+        const itemsToInsert = localItems.filter((id) => !remoteIds.includes(id) && isUuid(id));
 
         if (itemsToInsert.length > 0) {
           const insertPayload = itemsToInsert.map((property_id) => ({
@@ -62,14 +60,20 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         }
 
         const merged = Array.from(new Set([...remoteIds, ...localItems]));
-        setWishlistIds(merged);
+        if (isMounted) {
+          setWishlistIds(merged);
+        }
         localStorage.setItem('rw_wishlist', JSON.stringify(merged));
       } catch (err) {
         console.error('Failed to sync wishlist with Supabase:', err);
       }
     };
 
-    syncWishlist();
+    void syncWishlist();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user, supabase]);
 
   const isWishlisted = (propertyId: string) => {
@@ -85,8 +89,8 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     setWishlistIds(updated);
     localStorage.setItem('rw_wishlist', JSON.stringify(updated));
 
-    // If logged in to Supabase, update database
-    if (user && supabase) {
+    const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+    if (user && supabase && isUuid(propertyId)) {
       try {
         if (exists) {
           await supabase

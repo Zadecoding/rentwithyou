@@ -69,7 +69,7 @@ CREATE TABLE public.enquiries (
     move_date TEXT,
     household_size TEXT,
     message TEXT NOT NULL,
-    property_id UUID REFERENCES public.properties(id) ON DELETE SET NULL,
+    property_id TEXT,
     status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'contacted', 'closed')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -121,35 +121,41 @@ ALTER TABLE public.wishlists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.enquiries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.site_stats ENABLE ROW LEVEL SECURITY;
 
--- Helper function: Check if current auth user is admin
+-- Helper function: Check if current auth user is an approved admin
 CREATE OR REPLACE FUNCTION is_admin()
-RETURNS BOOLEAN AS $$
-BEGIN
-    RETURN (auth.jwt() ->> 'email' = current_setting('request.jwt.claims', true)::json ->> 'email')
-       AND (auth.jwt() ->> 'email' = 'rentwithyou.gurgaon@gmail.com');
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT lower(coalesce(auth.jwt() ->> 'email', '')) IN (
+    'satya2me2@gmail.com',
+    'rentwithyou.gurgaon@gmail.com'
+  );
+$$;
 
 -- RLS: properties
--- Public can read only approved properties
+-- Public can read only approved properties; owners can view their submitted properties; admins can view all
 CREATE POLICY "Public can view approved properties"
     ON public.properties FOR SELECT
-    USING (status = 'approved' OR auth.jwt() ->> 'email' = 'rentwithyou.gurgaon@gmail.com' OR auth.uid() = user_id);
+    USING (status = 'approved' OR is_admin() OR (auth.uid() IS NOT NULL AND auth.uid() = user_id));
 
--- Authenticated users can insert properties (defaults to pending)
-CREATE POLICY "Users can insert property"
+-- Anyone (guests, owners, dealers) can submit a property for review (status must be pending) or admins can insert approved
+CREATE POLICY "Anyone can submit pending property"
     ON public.properties FOR INSERT
-    WITH CHECK (auth.role() = 'authenticated' OR true);
+    WITH CHECK (status = 'pending' OR is_admin());
 
 -- Users can update their own properties; Admins can update any
 CREATE POLICY "Users can update own property or admin"
     ON public.properties FOR UPDATE
-    USING (auth.uid() = user_id OR auth.jwt() ->> 'email' = 'rentwithyou.gurgaon@gmail.com');
+    USING ((auth.uid() IS NOT NULL AND auth.uid() = user_id) OR is_admin())
+    WITH CHECK ((auth.uid() IS NOT NULL AND auth.uid() = user_id) OR is_admin());
 
 -- Users can delete their own properties; Admins can delete any
 CREATE POLICY "Users can delete own property or admin"
     ON public.properties FOR DELETE
-    USING (auth.uid() = user_id OR auth.jwt() ->> 'email' = 'rentwithyou.gurgaon@gmail.com');
+    USING ((auth.uid() IS NOT NULL AND auth.uid() = user_id) OR is_admin());
 
 -- RLS: wishlists
 CREATE POLICY "Users can view own wishlists"
@@ -170,15 +176,16 @@ CREATE POLICY "Anyone can submit enquiry"
     ON public.enquiries FOR INSERT
     WITH CHECK (true);
 
--- Only admin can view enquiries
+-- Only admins can view enquiries
 CREATE POLICY "Admin can view enquiries"
     ON public.enquiries FOR SELECT
-    USING (auth.jwt() ->> 'email' = 'rentwithyou.gurgaon@gmail.com');
+    USING (is_admin());
 
--- Admin can update enquiry status
+-- Only admins can update enquiry status
 CREATE POLICY "Admin can update enquiries"
     ON public.enquiries FOR UPDATE
-    USING (auth.jwt() ->> 'email' = 'rentwithyou.gurgaon@gmail.com');
+    USING (is_admin())
+    WITH CHECK (is_admin());
 
 -- RLS: site_stats
 CREATE POLICY "Public read site_stats"
@@ -196,12 +203,17 @@ CREATE POLICY "Public Access"
     ON storage.objects FOR SELECT
     USING (bucket_id = 'property-images');
 
--- Authenticated or public users can upload images
+-- Allow image uploads to property-images bucket
 CREATE POLICY "Allow Image Uploads"
     ON storage.objects FOR INSERT
-    WITH CHECK (bucket_id = 'property-images');
+    WITH CHECK (
+      bucket_id = 'property-images'
+    );
 
--- Admin can delete images
+-- Only admins may delete property images
 CREATE POLICY "Allow Image Deletes"
     ON storage.objects FOR DELETE
-    USING (bucket_id = 'property-images');
+    USING (
+      bucket_id = 'property-images'
+      AND is_admin()
+    );

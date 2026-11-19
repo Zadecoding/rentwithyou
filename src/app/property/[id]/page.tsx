@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Property } from '@/types';
@@ -19,15 +19,10 @@ import {
   X,
   Maximize2,
   Check,
-  Building,
-  Bed,
-  Sofa,
-  Calendar,
 } from 'lucide-react';
 
 export default function PropertyDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const id = params?.id as string;
 
   const { isWishlisted, toggleWishlist } = useWishlist();

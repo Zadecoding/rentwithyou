@@ -5,13 +5,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { createProperty, uploadPropertyImages } from '@/lib/propertyStore';
-import { PropertyCategory, ListedByRole, PropertyType } from '@/types';
+import { PropertyCategory, ListedByRole, PropertyType, Property } from '@/types';
 import {
   Upload,
   CheckCircle2,
   X,
-  Building,
-  ShieldCheck,
   AlertCircle,
 } from 'lucide-react';
 
@@ -100,7 +98,7 @@ export default function ListYourPropertyPage() {
         sub_category: propertyType.toLowerCase(),
         property_type: propertyType,
         bedrooms,
-        furnishing: furnishing as any,
+        furnishing: furnishing as Property['furnishing'],
         price: numericPrice,
         price_label: priceLabel,
         area: locationArea,
@@ -117,7 +115,7 @@ export default function ListYourPropertyPage() {
         owner_phone: phone,
         owner_email: email || user?.email || undefined,
         user_id: user?.id || null,
-        status: 'pending', // Pending review
+        status: 'pending',
       });
 
       if (result.success) {
@@ -125,8 +123,7 @@ export default function ListYourPropertyPage() {
       } else {
         setErrorMsg(result.error || 'Failed to submit property.');
       }
-    } catch (err: any) {
-      console.error(err);
+    } catch {
       setErrorMsg('An error occurred during submission. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -214,6 +211,38 @@ export default function ListYourPropertyPage() {
                     placeholder="[Number] e.g. +91 9911169115"
                     className="w-full text-xs font-medium px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E59A38]"
                   />
+                </div>
+              </div>
+
+              {/* Optional Email & City */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-1">
+                    Email Address (Optional)
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="owner@example.com"
+                    className="w-full text-xs font-medium px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E59A38]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-1">
+                    City
+                  </label>
+                  <select
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full text-xs font-medium px-4 py-3 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#E59A38]"
+                  >
+                    <option value="Gurgaon">Gurgaon</option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Noida">Noida</option>
+                    <option value="Faridabad">Faridabad</option>
+                    <option value="Ghaziabad">Ghaziabad</option>
+                  </select>
                 </div>
               </div>
 

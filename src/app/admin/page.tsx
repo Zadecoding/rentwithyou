@@ -16,26 +16,18 @@ import {
   getVisitorCount,
   uploadPropertyImages,
 } from '@/lib/propertyStore';
-import { Property, Enquiry, PropertyCategory, PropertyType, ListedByRole, PropertyBadge } from '@/types';
+import { Property, Enquiry, PropertyCategory, PropertyType, PropertyBadge, PropertyStatus } from '@/types';
 import {
   ShieldCheck,
   CheckCircle2,
   XCircle,
-  Clock,
-  Eye,
   Trash2,
   Edit,
   Phone,
   MessageCircle,
   Plus,
   Search,
-  Filter,
-  Users,
-  Building,
-  Truck,
-  Armchair,
   X,
-  Upload,
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -45,7 +37,6 @@ export default function AdminPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [visitorCount, setVisitorCount] = useState<number>(BRAND.defaultVisitorCount);
-  const [loading, setLoading] = useState(true);
 
   // Search & Filter in Admin All Properties
   const [searchTerm, setSearchTerm] = useState('');
@@ -60,8 +51,8 @@ export default function AdminPage() {
   const [newFurnishing, setNewFurnishing] = useState('Semi-furnished');
   const [newPrice, setNewPrice] = useState('');
   const [newArea, setNewArea] = useState('');
-  const [newOwnerName, setNewOwnerName] = useState('Rent With You Admin');
-  const [newOwnerPhone, setNewOwnerPhone] = useState(BRAND.phone);
+  const [newOwnerName] = useState('Rent With You Admin');
+  const [newOwnerPhone] = useState(BRAND.phone);
   const [newBadge, setNewBadge] = useState<PropertyBadge>('Verified');
   const [newDescription, setNewDescription] = useState('');
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
@@ -71,21 +62,24 @@ export default function AdminPage() {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const loadData = async () => {
-    setLoading(true);
-    const [allProps, allEnqs, count] = await Promise.all([
-      fetchAllPropertiesForAdmin(),
-      fetchEnquiries(),
-      getVisitorCount(),
-    ]);
-    setProperties(allProps);
-    setEnquiries(allEnqs);
-    setVisitorCount(count);
-    setLoading(false);
-  };
-
   useEffect(() => {
-    loadData();
+    let isMounted = true;
+    const load = async () => {
+      const [allProps, allEnqs, count] = await Promise.all([
+        fetchAllPropertiesForAdmin(),
+        fetchEnquiries(),
+        getVisitorCount(),
+      ]);
+      if (isMounted) {
+        setProperties(allProps);
+        setEnquiries(allEnqs);
+        setVisitorCount(count);
+      }
+    };
+    void load();
+    return () => {
+      isMounted = false;
+    };
   }, [isAdmin]);
 
   // If unauthorized, show restricted access gate
@@ -97,7 +91,7 @@ export default function AdminPage() {
         </div>
         <h1 className="text-2xl font-black text-[#1B2A4A]">Admin Access Restricted</h1>
         <p className="text-xs sm:text-sm text-gray-600 mt-2 leading-relaxed">
-          This panel is strictly restricted to administrator accounts matching <b>{BRAND.adminEmail}</b>.
+          This panel is strictly restricted to administrator accounts ({BRAND.adminEmails.join(', ')}).
         </p>
 
         <div className="mt-6 bg-[#FAF8F5] p-5 rounded-2xl border border-gray-200 text-left">
@@ -183,7 +177,7 @@ export default function AdminPage() {
         sub_category: newType.toLowerCase(),
         property_type: newType,
         bedrooms: newBedrooms,
-        furnishing: newFurnishing as any,
+        furnishing: newFurnishing as Property['furnishing'],
         price: numericPrice,
         price_label: priceLabel,
         area: newArea,
@@ -196,7 +190,7 @@ export default function AdminPage() {
         owner_name: newOwnerName,
         owner_phone: newOwnerPhone,
         owner_email: BRAND.email,
-        status: 'approved', // Admin listings approved directly!
+        status: 'approved',
       });
 
       if (res.success && res.data) {
@@ -657,7 +651,7 @@ export default function AdminPage() {
                     <select
                       value={enq.status}
                       onChange={(e) =>
-                        handleUpdateStatus(enq.id!, e.target.value as any)
+                        handleUpdateStatus(enq.id!, e.target.value as 'new' | 'contacted' | 'closed')
                       }
                       className="text-[11px] font-bold rounded-lg border border-gray-200 px-2 py-1.5 bg-white"
                     >
@@ -724,7 +718,7 @@ export default function AdminPage() {
                   <label className="block text-xs font-bold text-gray-700 mb-1">Category</label>
                   <select
                     value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value as any)}
+                    onChange={(e) => setNewCategory(e.target.value as PropertyCategory)}
                     className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white"
                   >
                     <option value="rent">Rent</option>
@@ -736,7 +730,7 @@ export default function AdminPage() {
                   <label className="block text-xs font-bold text-gray-700 mb-1">Type</label>
                   <select
                     value={newType}
-                    onChange={(e) => setNewType(e.target.value as any)}
+                    onChange={(e) => setNewType(e.target.value as PropertyType)}
                     className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white"
                   >
                     <option value="Apartment">Apartment</option>
@@ -753,7 +747,7 @@ export default function AdminPage() {
                   <label className="block text-xs font-bold text-gray-700 mb-1">Badge</label>
                   <select
                     value={newBadge || ''}
-                    onChange={(e) => setNewBadge((e.target.value as any) || null)}
+                    onChange={(e) => setNewBadge((e.target.value as PropertyBadge) || null)}
                     className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white"
                   >
                     <option value="Verified">Verified</option>
@@ -900,7 +894,7 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setEditingProperty({
                         ...editingProperty,
-                        badge: (e.target.value as any) || null,
+                        badge: (e.target.value as PropertyBadge) || null,
                       })
                     }
                     className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white"
@@ -924,7 +918,7 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setEditingProperty({
                         ...editingProperty,
-                        status: e.target.value as any,
+                        status: e.target.value as PropertyStatus,
                       })
                     }
                     className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white"
@@ -940,7 +934,7 @@ export default function AdminPage() {
                     type="text"
                     value={editingProperty.furnishing}
                     onChange={(e) =>
-                      setEditingProperty({ ...editingProperty, furnishing: e.target.value as any })
+                      setEditingProperty({ ...editingProperty, furnishing: e.target.value as Property['furnishing'] })
                     }
                     className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-gray-300"
                   />

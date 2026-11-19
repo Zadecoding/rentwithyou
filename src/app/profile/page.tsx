@@ -7,9 +7,7 @@ import { useWishlist } from '@/context/WishlistContext';
 import { fetchAllPropertiesForAdmin, deleteProperty } from '@/lib/propertyStore';
 import { Property } from '@/types';
 import {
-  User,
   ShieldCheck,
-  Heart,
   PlusCircle,
   Building,
   LogOut,
@@ -29,8 +27,6 @@ export default function ProfilePage() {
     signInWithEmail,
     signUpWithEmail,
     signOut,
-    demoLoginAsAdmin,
-    demoLoginAsUser,
     isLoading,
   } = useAuth();
   const { count: wishlistCount } = useWishlist();
@@ -200,31 +196,6 @@ export default function ProfilePage() {
                 ? "Don't have an account? Sign up"
                 : 'Already have an account? Sign in'}
             </button>
-          </div>
-
-          {/* Quick Demo Logins */}
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <p className="text-[11px] font-bold text-gray-400 text-center uppercase tracking-wider mb-3">
-              Fast Demo Switcher
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={demoLoginAsAdmin}
-                className="py-2.5 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-[#E59A38] border border-amber-200 text-xs font-bold transition flex items-center justify-center gap-1.5"
-              >
-                <ShieldCheck size={14} />
-                <span>Admin Login</span>
-              </button>
-              <button
-                type="button"
-                onClick={demoLoginAsUser}
-                className="py-2.5 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition flex items-center justify-center gap-1.5"
-              >
-                <User size={14} />
-                <span>User Demo</span>
-              </button>
-            </div>
           </div>
         </div>
       </div>

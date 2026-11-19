@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { BRAND } from '@/lib/constants';
+import { BRAND, isAdminEmail } from '@/lib/constants';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -27,7 +27,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
 
   useEffect(() => {
-    // Check local storage for demo session if supabase is not yet configured
     if (!supabase) {
       const savedUser = localStorage.getItem('rw_demo_user');
       if (savedUser) {
@@ -41,7 +40,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Supabase auth state listener
     const getInitialSession = async () => {
       try {
         const { data } = await supabase.auth.getSession();
@@ -54,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    getInitialSession();
+    void getInitialSession();
 
     const {
       data: { subscription },
@@ -69,11 +67,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [supabase]);
 
-  const isAdmin = user?.email?.toLowerCase() === BRAND.adminEmail.toLowerCase();
+  const isAdmin = isAdminEmail(user?.email);
 
   const signInWithEmail = async (email: string, password?: string) => {
     if (!supabase) {
-      // Mock sign in
       const mockUser = {
         id: 'usr-' + Date.now(),
         email,

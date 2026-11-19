@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BRAND, getWhatsAppLink } from '@/lib/constants';
+import { getWhatsAppLink } from '@/lib/constants';
 import { submitEnquiry } from '@/lib/propertyStore';
 import { Armchair, MessageCircle, X, CheckCircle2, Check } from 'lucide-react';
 

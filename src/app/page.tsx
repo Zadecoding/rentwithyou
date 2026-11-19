@@ -12,14 +12,6 @@ import FurnitureModal from '@/components/FurnitureModal';
 import {
   Search,
   ChevronDown,
-  Building2,
-  Home as HomeIcon,
-  Briefcase,
-  CheckCircle,
-  Truck,
-  Armchair,
-  KeyRound,
-  Compass,
 } from 'lucide-react';
 
 export default function HomePage() {

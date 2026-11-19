@@ -13,8 +13,19 @@ export const BRAND = {
   address: 'Golf Course Extension Road, Sector 65, Gurgaon, Haryana 122001',
   copyright: '© 2026 Rent With You. All rights reserved.',
   adminEmail: process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'rentwithyou.gurgaon@gmail.com',
+  adminEmails: [
+    'satya2me2@gmail.com',
+    'rentwithyou.gurgaon@gmail.com',
+    (process.env.NEXT_PUBLIC_ADMIN_EMAIL || '').toLowerCase().trim(),
+  ].filter(Boolean),
   defaultVisitorCount: 12480,
 };
+
+export function isAdminEmail(email?: string | null): boolean {
+  if (!email) return false;
+  const lower = email.toLowerCase().trim();
+  return BRAND.adminEmails.some((e) => e.toLowerCase().trim() === lower);
+}
 
 export const COLORS = {
   primaryDark: '#1B2A4A',

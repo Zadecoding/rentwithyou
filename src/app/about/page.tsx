@@ -2,17 +2,13 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { BRAND, getWhatsAppLink } from '@/lib/constants';
+import { getWhatsAppLink } from '@/lib/constants';
 import {
-  ShieldCheck,
   Building,
   Truck,
   Armchair,
-  CheckCircle2,
-  Phone,
   MessageCircle,
   MapPin,
-  Users,
 } from 'lucide-react';
 import PackersMoversModal from '@/components/PackersMoversModal';
 import FurnitureModal from '@/components/FurnitureModal';

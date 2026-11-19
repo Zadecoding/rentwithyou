@@ -6,7 +6,7 @@ import { useWishlist } from '@/context/WishlistContext';
 import { fetchProperties } from '@/lib/propertyStore';
 import { Property } from '@/types';
 import PropertyCard from '@/components/PropertyCard';
-import { Heart, Search } from 'lucide-react';
+import { Heart } from 'lucide-react';
 
 export default function WishlistPage() {
   const { wishlistIds, count } = useWishlist();
@@ -23,7 +23,9 @@ export default function WishlistPage() {
     load();
   }, []);
 
-  const savedProperties = allProperties.filter((p) => wishlistIds.includes(p.id));
+  const savedProperties = allProperties.filter(
+    (p) => wishlistIds.includes(p.id) || wishlistIds.includes(p.property_code)
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">

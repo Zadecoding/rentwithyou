@@ -1,4 +1,4 @@
-import { Property, Enquiry, PropertyCategory, FilterState } from '@/types';
+import { Property, Enquiry, PropertyCategory } from '@/types';
 import { INITIAL_PROPERTIES } from '@/data/mockProperties';
 import { createClient } from './supabase/client';
 import { BRAND } from './constants';
@@ -86,16 +86,20 @@ export async function fetchAllPropertiesForAdmin(): Promise<Property[]> {
   return getStoredProperties();
 }
 
+const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
 export async function fetchPropertyById(id: string): Promise<Property | null> {
   const supabase = createClient();
 
   if (supabase) {
     try {
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .or(`id.eq.${id},property_code.eq.${id}`)
-        .single();
+      let query = supabase.from('properties').select('*');
+      if (isUuid(id)) {
+        query = query.or(`id.eq.${id},property_code.eq.${id}`);
+      } else {
+        query = query.eq('property_code', id);
+      }
+      const { data, error } = await query.maybeSingle();
 
       if (!error && data) {
         return data as Property;
@@ -189,15 +193,20 @@ export async function updatePropertyStatus(
 
   if (supabase) {
     try {
-      const { error } = await supabase
-        .from('properties')
-        .update({ status })
-        .eq('id', id);
+      let query = supabase.from('properties').update({ status });
+      if (isUuid(id)) {
+        query = query.eq('id', id);
+      } else {
+        query = query.eq('property_code', id);
+      }
+      const { error } = await query;
 
       if (!error) {
         // Also update local
         const current = getStoredProperties();
-        const updated = current.map((p) => (p.id === id ? { ...p, status } : p));
+        const updated = current.map((p) =>
+          p.id === id || p.property_code === id ? { ...p, status } : p
+        );
         savePropertiesToStorage(updated);
         return true;
       }
@@ -207,7 +216,9 @@ export async function updatePropertyStatus(
   }
 
   const current = getStoredProperties();
-  const updated = current.map((p) => (p.id === id ? { ...p, status } : p));
+  const updated = current.map((p) =>
+    p.id === id || p.property_code === id ? { ...p, status } : p
+  );
   savePropertiesToStorage(updated);
   return true;
 }
@@ -220,10 +231,18 @@ export async function updateProperty(
 
   if (supabase) {
     try {
-      const { error } = await supabase.from('properties').update(updates).eq('id', id);
+      let query = supabase.from('properties').update(updates);
+      if (isUuid(id)) {
+        query = query.eq('id', id);
+      } else {
+        query = query.eq('property_code', id);
+      }
+      const { error } = await query;
       if (!error) {
         const current = getStoredProperties();
-        const updated = current.map((p) => (p.id === id ? { ...p, ...updates } : p));
+        const updated = current.map((p) =>
+          p.id === id || p.property_code === id ? { ...p, ...updates } : p
+        );
         savePropertiesToStorage(updated);
         return true;
       }
@@ -233,7 +252,9 @@ export async function updateProperty(
   }
 
   const current = getStoredProperties();
-  const updated = current.map((p) => (p.id === id ? { ...p, ...updates } : p));
+  const updated = current.map((p) =>
+    p.id === id || p.property_code === id ? { ...p, ...updates } : p
+  );
   savePropertiesToStorage(updated);
   return true;
 }
@@ -243,10 +264,16 @@ export async function deleteProperty(id: string): Promise<boolean> {
 
   if (supabase) {
     try {
-      const { error } = await supabase.from('properties').delete().eq('id', id);
+      let query = supabase.from('properties').delete();
+      if (isUuid(id)) {
+        query = query.eq('id', id);
+      } else {
+        query = query.eq('property_code', id);
+      }
+      const { error } = await query;
       if (!error) {
         const current = getStoredProperties();
-        const updated = current.filter((p) => p.id !== id);
+        const updated = current.filter((p) => p.id !== id && p.property_code !== id);
         savePropertiesToStorage(updated);
         return true;
       }
@@ -256,7 +283,7 @@ export async function deleteProperty(id: string): Promise<boolean> {
   }
 
   const current = getStoredProperties();
-  const updated = current.filter((p) => p.id !== id);
+  const updated = current.filter((p) => p.id !== id && p.property_code !== id);
   savePropertiesToStorage(updated);
   return true;
 }
@@ -321,7 +348,22 @@ export async function submitEnquiry(enquiry: Omit<Enquiry, 'id' | 'created_at' |
     try {
       const { data, error } = await supabase
         .from('enquiries')
-        .insert([newEnquiry])
+        .insert([
+          {
+            enquiry_type: enquiry.enquiry_type,
+            name: enquiry.name,
+            phone: enquiry.phone,
+            email: enquiry.email || null,
+            interest: enquiry.interest || null,
+            pickup_location: enquiry.pickup_location || null,
+            drop_location: enquiry.drop_location || null,
+            move_date: enquiry.move_date || null,
+            household_size: enquiry.household_size || null,
+            message: enquiry.message,
+            property_id: enquiry.property_id || null,
+            status: 'new',
+          },
+        ])
         .select()
         .single();
 
@@ -421,8 +463,10 @@ export async function updateEnquiryStatus(id: string, status: 'new' | 'contacted
 
   if (supabase) {
     try {
-      const { error } = await supabase.from('enquiries').update({ status }).eq('id', id);
-      if (!error) return true;
+      if (isUuid(id)) {
+        const { error } = await supabase.from('enquiries').update({ status }).eq('id', id);
+        if (!error) return true;
+      }
     } catch {
       // fallback
     }

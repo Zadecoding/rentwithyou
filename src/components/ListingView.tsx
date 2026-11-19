@@ -19,9 +19,9 @@ function ListingViewInner({ category, pageTitle, pageSubtitle }: ListingViewProp
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filter states
-  const [location, setLocation] = useState(searchParams.get('location') || 'All areas');
-  const [propertyType, setPropertyType] = useState(searchParams.get('property_type') || 'Any');
+  // Filter states initialized from searchParams
+  const [location, setLocation] = useState(searchParams.get('location') || searchParams.get('city') || 'All areas');
+  const [propertyType, setPropertyType] = useState(searchParams.get('type') || searchParams.get('property_type') || 'Any');
   const [bedrooms, setBedrooms] = useState(searchParams.get('bedrooms') || 'Any');
   const [furnishing, setFurnishing] = useState(searchParams.get('furnishing') || 'Any');
   const [priceMax, setPriceMax] = useState<number>(() => {
@@ -33,24 +33,20 @@ function ListingViewInner({ category, pageTitle, pageSubtitle }: ListingViewProp
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     async function load() {
       setLoading(true);
       const data = await fetchProperties(category);
-      setProperties(data);
-      setLoading(false);
+      if (isMounted) {
+        setProperties(data);
+        setLoading(false);
+      }
     }
-    load();
+    void load();
+    return () => {
+      isMounted = false;
+    };
   }, [category]);
-
-  // Sync from query params if changed
-  useEffect(() => {
-    const loc = searchParams.get('location') || searchParams.get('city');
-    if (loc) setLocation(loc);
-    const type = searchParams.get('type') || searchParams.get('property_type');
-    if (type) setPropertyType(type);
-    const bed = searchParams.get('bedrooms');
-    if (bed) setBedrooms(bed);
-  }, [searchParams]);
 
   const handleResetFilters = () => {
     setLocation('All areas');
@@ -301,7 +297,7 @@ function ListingViewInner({ category, pageTitle, pageSubtitle }: ListingViewProp
               </span>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e) => setSortBy(e.target.value as 'newest' | 'price_asc' | 'price_desc')}
                 className="text-xs font-semibold text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#E59A38]"
               >
                 <option value="newest">Newest</option>
