@@ -29,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased scroll-smooth">
-      <body className="min-h-full flex flex-col bg-white text-gray-900 selection:bg-[#E59A38] selection:text-white">
+      <body className="min-h-full flex flex-col bg-white text-gray-900 selection:bg-[#E59A38] selection:text-white overflow-x-clip">
         <AuthProvider>
           <WishlistProvider>
             <Header />

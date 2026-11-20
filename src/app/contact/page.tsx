@@ -38,7 +38,7 @@ export default function ContactPage() {
   const whatsappMessage = `Hi Rent With You, I would like to enquire about: ${interest}. My name is ${name || '[Name]'}.`;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 2xl:px-16 py-12">
       {/* Page Title & Subtitle (Matches Wireframe Page 9) */}
       <div className="mb-10 max-w-3xl">
         <h1 className="text-3xl sm:text-4xl font-black text-[#1B2A4A] tracking-tight">

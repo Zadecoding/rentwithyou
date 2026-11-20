@@ -61,7 +61,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
     >
       <div>
         {/* Top Image Container */}
-        <div className="relative w-full h-48 sm:h-52 overflow-hidden bg-gray-100">
+        <div className="relative w-full h-52 sm:h-56 xl:h-60 overflow-hidden bg-gray-100">
           <Image
             src={imageSrc}
             alt={property.title}

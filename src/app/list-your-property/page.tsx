@@ -292,7 +292,7 @@ export default function ListYourPropertyPage() {
 
   return (
     <div className="w-full bg-[#FAF8F5]/60 min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 2xl:px-16">
         {/* Page Top Header */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

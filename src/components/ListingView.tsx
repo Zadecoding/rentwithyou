@@ -122,7 +122,7 @@ function ListingViewInner({ category, pageTitle, pageSubtitle }: ListingViewProp
     : `Up to Rs. ${priceMax.toLocaleString('en-IN')}`;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 2xl:px-16 py-8">
       {/* Page Title & Breadcrumb */}
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1B2A4A]">{pageTitle}</h1>
@@ -309,7 +309,7 @@ function ListingViewInner({ category, pageTitle, pageSubtitle }: ListingViewProp
 
           {/* Properties Grid */}
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="bg-gray-100 rounded-2xl h-72 animate-pulse" />
               ))}
@@ -329,7 +329,7 @@ function ListingViewInner({ category, pageTitle, pageSubtitle }: ListingViewProp
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
               {filteredProperties.map((prop) => (
                 <PropertyCard key={prop.id} property={prop} />
               ))}
@@ -343,7 +343,7 @@ function ListingViewInner({ category, pageTitle, pageSubtitle }: ListingViewProp
 
 export default function ListingView(props: ListingViewProps) {
   return (
-    <Suspense fallback={<div className="max-w-7xl mx-auto p-12 text-center text-sm text-gray-500">Loading listings...</div>}>
+    <Suspense fallback={<div className="w-full max-w-[1760px] mx-auto p-12 text-center text-sm text-gray-500">Loading listings...</div>}>
       <ListingViewInner {...props} />
     </Suspense>
   );

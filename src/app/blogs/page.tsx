@@ -31,7 +31,7 @@ export default function BlogsPage() {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 2xl:px-16 py-12">
       <h1 className="text-3xl font-black text-[#1B2A4A] mb-2">Real Estate Insights & City Guides</h1>
       <p className="text-sm text-gray-500 mb-8">
         Expert property tips, sector price trends, and tenancy guides across Gurgaon and Delhi NCR.

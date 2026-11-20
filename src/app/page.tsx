@@ -128,8 +128,8 @@ export default function HomePage() {
   return (
     <div className="w-full bg-[#FFFFFF]">
       {/* 1. HERO SECTION */}
-      <section className="relative px-4 sm:px-6 lg:px-8 pt-4 pb-8">
-        <div className="max-w-7xl mx-auto rounded-3xl bg-gradient-to-br from-[#121c33] via-[#1B2A4A] to-[#16223b] text-white overflow-hidden shadow-2xl relative px-6 py-12 sm:py-20 sm:px-12 border border-white/10">
+      <section className="relative px-3 sm:px-6 lg:px-8 xl:px-10 pt-4 pb-8">
+        <div className="w-full max-w-[1760px] mx-auto rounded-3xl bg-gradient-to-br from-[#121c33] via-[#1B2A4A] to-[#16223b] text-white overflow-hidden shadow-2xl relative px-6 py-12 sm:py-20 sm:px-12 xl:px-16 2xl:px-20 border border-white/10">
           {/* Animated Ambient Glowing Orbs */}
           <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#E59A38]/20 rounded-full blur-3xl animate-pulse-subtle pointer-events-none" />
           <div className="absolute -bottom-32 -right-24 w-[450px] h-[450px] bg-blue-500/15 rounded-full blur-3xl animate-float-slow pointer-events-none" />
@@ -144,7 +144,7 @@ export default function HomePage() {
             }}
           />
 
-          <div className="relative z-10 max-w-4xl mx-auto text-center">
+          <div className="relative z-10 max-w-5xl xl:max-w-6xl mx-auto text-center">
             {/* Live Verified Tag / Shimmer Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-gray-200 mb-6 shadow-sm shimmer-badge hover:bg-white/15 transition cursor-default">
               <span className="relative flex h-2 w-2">
@@ -406,7 +406,7 @@ export default function HomePage() {
       </section>
 
       {/* 2. "WHAT DO YOU NEED TODAY?" QUICK SERVICES SECTION */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <section className="py-12 px-4 sm:px-6 lg:px-10 xl:px-12 2xl:px-16 w-full max-w-[1760px] mx-auto">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <span className="text-xs font-bold text-[#E59A38] uppercase tracking-wider">
             Quick Services
@@ -636,7 +636,7 @@ export default function HomePage() {
       </section>
 
       {/* 3. HOME PAGE CATEGORY SHOWCASE */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-16">
+      <section className="py-12 px-4 sm:px-6 lg:px-10 xl:px-12 2xl:px-16 w-full max-w-[1760px] mx-auto space-y-16">
         {/* CATEGORY 1: RENTAL PROPERTIES */}
         <div>
           {/* Header */}

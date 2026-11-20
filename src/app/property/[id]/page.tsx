@@ -98,7 +98,7 @@ export default function PropertyDetailPage() {
   const whatsappMessage = `Hi Rent With You, I am interested in Property ID: [${property.property_code}] - ${property.title} in ${property.area}. Please share details and arrange a visit.`;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 2xl:px-16 py-6">
       {/* Breadcrumb (Matches Wireframe Page 7: Home > Rent > 2 BHK Apartment) */}
       <nav className="flex items-center space-x-2 text-xs text-gray-500 mb-6">
         <Link href="/" className="hover:text-[#1B2A4A] transition">
@@ -124,7 +124,7 @@ export default function PropertyDetailPage() {
         {/* LEFT COLUMN: Main Photo Viewer & Thumbnails */}
         <div className="lg:col-span-7 space-y-4">
           {/* Main Large Photo */}
-          <div className="relative w-full h-72 sm:h-96 md:h-[440px] rounded-3xl overflow-hidden bg-gray-900 shadow-md group">
+          <div className="relative w-full h-72 sm:h-96 md:h-[460px] xl:h-[520px] rounded-3xl overflow-hidden bg-gray-900 shadow-md group">
             <Image
               src={currentPhoto}
               alt={property.title}

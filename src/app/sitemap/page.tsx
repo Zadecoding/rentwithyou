@@ -51,13 +51,13 @@ export default function SitemapPage() {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 2xl:px-16 py-12">
       <h1 className="text-3xl font-black text-[#1B2A4A] mb-2">Website Sitemap</h1>
       <p className="text-sm text-gray-500 mb-8">
         Full directory of all pages, categories, and resources on Rent With You.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         {sections.map((sec, i) => (
           <div key={i} className="bg-[#FAF8F5] p-6 rounded-3xl border border-gray-200">
             <h2 className="text-base font-bold text-[#1B2A4A] mb-4 pb-2 border-b border-gray-200">
