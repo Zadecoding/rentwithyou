@@ -113,7 +113,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 7. Configure Row Level Security (RLS)
+-- 7. Grant Privileges to Supabase Roles (Required by PostgREST & RLS)
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+
+GRANT ALL ON TABLE public.properties TO postgres, anon, authenticated, service_role;
+GRANT ALL ON TABLE public.wishlists TO postgres, anon, authenticated, service_role;
+GRANT ALL ON TABLE public.enquiries TO postgres, anon, authenticated, service_role;
+GRANT ALL ON TABLE public.site_stats TO postgres, anon, authenticated, service_role;
+
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO postgres, anon, authenticated, service_role;
+
+-- 8. Configure Row Level Security (RLS)
 
 -- Enable RLS on all tables
 ALTER TABLE public.properties ENABLE ROW LEVEL SECURITY;
