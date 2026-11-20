@@ -122,8 +122,10 @@ export default function ProfilePage() {
       <div className="max-w-md mx-auto px-4 py-16">
         <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-lg">
           <div className="text-center mb-6">
-            <div className="flex justify-center mb-3">
-              <Logo variant="icon" height={48} />
+            <div className="flex justify-center mb-4">
+              <Link href="/" className="inline-block hover:opacity-95 transition-opacity" title="Rent With You">
+                <Logo variant="dark" height={50} />
+              </Link>
             </div>
             <h1 className="text-2xl font-black text-[#1B2A4A]">
               {authMode === 'signin' ? 'Login' : 'Sign Up'}

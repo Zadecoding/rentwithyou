@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import Logo from '@/components/Logo';
 import { useAuth } from '@/context/AuthContext';
 import { createProperty, uploadPropertyImages } from '@/lib/propertyStore';
 import { PropertyCategory, ListedByRole, PropertyType, Property } from '@/types';
@@ -345,15 +346,14 @@ export default function ListYourPropertyPage() {
               {/* Left Side: Value Proposition for Owners */}
               <div className="md:col-span-5 bg-[#1B2A4A] text-white p-8 sm:p-10 flex flex-col justify-between relative overflow-hidden">
                 <div className="relative z-10 space-y-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#E59A38] text-white font-extrabold flex items-center justify-center text-xl shadow-md">
-                      R
-                    </div>
+                  <div className="space-y-2">
+                    <Link href="/" className="inline-block hover:opacity-90 transition-opacity" title="Rent With You">
+                      <Logo variant="light" height={42} />
+                    </Link>
                     <div>
-                      <h3 className="font-black text-lg text-white">Rent With You</h3>
-                      <p className="text-[10px] uppercase tracking-widest text-[#E59A38] font-bold">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#E59A38]/20 text-[#E59A38] border border-[#E59A38]/30">
                         Owner Portal
-                      </p>
+                      </span>
                     </div>
                   </div>
 
@@ -400,6 +400,10 @@ export default function ListYourPropertyPage() {
 
               {/* Right Side: Tabbed Sign In / Sign Up Form */}
               <div className="md:col-span-7 p-8 sm:p-10 flex flex-col justify-center">
+                <div className="flex justify-center md:hidden mb-4">
+                  <Logo variant="dark" height={40} />
+                </div>
+
                 {/* Mode Tabs */}
                 <div className="flex border-b border-gray-200 mb-6">
                   <button
