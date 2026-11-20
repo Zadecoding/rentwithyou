@@ -414,7 +414,7 @@ export default function ListYourPropertyPage() {
                         : 'border-transparent text-gray-400 hover:text-gray-600'
                     }`}
                   >
-                    Sign In
+                    Login
                   </button>
                   <button
                     type="button"
@@ -428,7 +428,7 @@ export default function ListYourPropertyPage() {
                         : 'border-transparent text-gray-400 hover:text-gray-600'
                     }`}
                   >
-                    Create New Account
+                    Sign Up
                   </button>
                 </div>
 
@@ -498,8 +498,8 @@ export default function ListYourPropertyPage() {
                     {isSubmittingAuth
                       ? 'Authenticating...'
                       : authMode === 'signin'
-                      ? 'Sign In & Unlock Listing Form'
-                      : 'Create Account & Continue'}
+                      ? 'Login & Unlock Listing Form'
+                      : 'Sign Up & Continue'}
                   </button>
                 </form>
 

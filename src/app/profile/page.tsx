@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Logo from '@/components/Logo';
 import { useAuth } from '@/context/AuthContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { fetchAllPropertiesForAdmin, fetchUserProperties, deleteProperty } from '@/lib/propertyStore';
@@ -121,15 +122,49 @@ export default function ProfilePage() {
       <div className="max-w-md mx-auto px-4 py-16">
         <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-lg">
           <div className="text-center mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-[#E59A38] text-white font-black flex items-center justify-center text-2xl mx-auto shadow-md mb-3">
-              R
+            <div className="flex justify-center mb-3">
+              <Logo variant="icon" size="md" />
             </div>
             <h1 className="text-2xl font-black text-[#1B2A4A]">
-              {authMode === 'signin' ? 'Welcome Back' : 'Create an Account'}
+              {authMode === 'signin' ? 'Login' : 'Sign Up'}
             </h1>
             <p className="text-xs text-gray-500 mt-1">
-              Sign in to manage your listed properties and synced wishlist
+              {authMode === 'signin'
+                ? 'Welcome back! Login to manage your listed properties & wishlist'
+                : 'Create an account to list properties and sync your wishlist'}
             </p>
+          </div>
+
+          {/* Toggle between Login and Sign Up */}
+          <div className="flex bg-gray-100 p-1 rounded-2xl mb-6">
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('signin');
+                setAuthError('');
+              }}
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+                authMode === 'signin'
+                  ? 'bg-white text-[#1B2A4A] shadow-xs'
+                  : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              Login
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('signup');
+                setAuthError('');
+              }}
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition cursor-pointer ${
+                authMode === 'signup'
+                  ? 'bg-white text-[#1B2A4A] shadow-xs'
+                  : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              Sign Up
+            </button>
           </div>
 
           {authError && (
@@ -172,13 +207,13 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={isAuthLoading}
-              className="w-full py-3.5 rounded-xl bg-[#1B2A4A] hover:bg-[#142038] text-white font-extrabold text-sm transition shadow-sm disabled:opacity-50"
+              className="w-full py-3.5 rounded-xl bg-[#1B2A4A] hover:bg-[#142038] text-white font-extrabold text-sm transition shadow-sm disabled:opacity-50 cursor-pointer"
             >
               {isAuthLoading
                 ? 'Processing...'
                 : authMode === 'signin'
-                ? 'Sign In with Supabase'
-                : 'Create Account'}
+                ? 'Login'
+                : 'Sign Up'}
             </button>
           </form>
 
@@ -188,11 +223,11 @@ export default function ProfilePage() {
                 setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
                 setAuthError('');
               }}
-              className="text-xs font-semibold text-[#E59A38] hover:underline"
+              className="text-xs font-semibold text-[#E59A38] hover:underline cursor-pointer"
             >
               {authMode === 'signin'
-                ? "Don't have an account? Sign up"
-                : 'Already have an account? Sign in'}
+                ? "Don't have an account? Sign Up"
+                : 'Already have an account? Login'}
             </button>
           </div>
         </div>
