@@ -1,5 +1,4 @@
 import { Property, Enquiry, PropertyCategory } from '@/types';
-import { INITIAL_PROPERTIES } from '@/data/mockProperties';
 import { createClient } from './supabase/client';
 import { BRAND } from './constants';
 
@@ -9,21 +8,13 @@ const LOCAL_STORAGE_VISITOR_KEY = 'rw_visitor_count';
 
 // Helper to get local custom properties
 function getStoredProperties(): Property[] {
-  if (typeof window === 'undefined') return INITIAL_PROPERTIES;
+  if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_PROPERTIES_KEY);
-    if (!raw) return INITIAL_PROPERTIES;
-    const custom = JSON.parse(raw) as Property[];
-    // Merge INITIAL_PROPERTIES with custom without duplicate IDs
-    const combined = [...custom];
-    for (const init of INITIAL_PROPERTIES) {
-      if (!combined.some((p) => p.id === init.id)) {
-        combined.push(init);
-      }
-    }
-    return combined;
+    if (!raw) return [];
+    return JSON.parse(raw) as Property[];
   } catch {
-    return INITIAL_PROPERTIES;
+    return [];
   }
 }
 
@@ -49,25 +40,14 @@ export async function fetchProperties(category?: PropertyCategory): Promise<Prop
 
       const { data, error } = await query;
       if (!error && data) {
-        // Merge Supabase properties with local/initial properties to guarantee full listings
-        const localProps = getStoredProperties();
-        const approvedLocal = localProps.filter(
-          (p) => p.status === 'approved' && (!category || p.category === category)
-        );
-        const combined = [...(data as Property[])];
-        for (const loc of approvedLocal) {
-          if (!combined.some((p) => p.id === loc.id || p.property_code === loc.property_code)) {
-            combined.push(loc);
-          }
-        }
-        return combined;
+        return data as Property[];
       }
     } catch (e) {
-      console.warn('Supabase fetch failed, falling back to local store:', e);
+      console.warn('Supabase fetch failed:', e);
     }
   }
 
-  // Fallback to local properties
+  // Fallback to local stored properties only (no dummy properties)
   const all = getStoredProperties();
   const approved = all.filter((p) => p.status === 'approved');
   if (category) {
@@ -86,7 +66,7 @@ export async function fetchAllPropertiesForAdmin(): Promise<Property[]> {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         return data as Property[];
       }
     } catch (e) {

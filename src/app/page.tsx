@@ -700,11 +700,26 @@ export default function HomePage() {
           </div>
 
           {/* Rental Properties Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {currentRentals.map((prop) => (
-              <PropertyCard key={prop.id} property={prop} />
-            ))}
-          </div>
+          {currentRentals.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {currentRentals.map((prop) => (
+                <PropertyCard key={prop.id} property={prop} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-[#FAF8F5] rounded-3xl border border-gray-200 p-8">
+              <p className="text-sm font-bold text-gray-800">No approved rental properties available right now</p>
+              <p className="text-xs text-gray-500 mt-1 max-w-md mx-auto">
+                Properties appear here once approved by our team. Are you an owner or agent?
+              </p>
+              <Link
+                href="/list-your-property"
+                className="mt-4 inline-block px-5 py-2.5 rounded-xl bg-[#1B2A4A] hover:bg-[#E59A38] text-white text-xs font-bold transition shadow-xs"
+              >
+                List Your Property
+              </Link>
+            </div>
+          )}
 
           {/* Rental Pagination */}
           {totalRentalPages > 1 && (
@@ -765,11 +780,26 @@ export default function HomePage() {
           </p>
 
           {/* Buy Properties Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {currentBuys.map((prop) => (
-              <PropertyCard key={prop.id} property={prop} />
-            ))}
-          </div>
+          {currentBuys.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {currentBuys.map((prop) => (
+                <PropertyCard key={prop.id} property={prop} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-[#FAF8F5] rounded-3xl border border-gray-200 p-8">
+              <p className="text-sm font-bold text-gray-800">No approved buy properties available right now</p>
+              <p className="text-xs text-gray-500 mt-1 max-w-md mx-auto">
+                Properties appear here once approved by our team. Are you an owner or agent?
+              </p>
+              <Link
+                href="/list-your-property"
+                className="mt-4 inline-block px-5 py-2.5 rounded-xl bg-[#1B2A4A] hover:bg-[#E59A38] text-white text-xs font-bold transition shadow-xs"
+              >
+                List Your Property
+              </Link>
+            </div>
+          )}
 
           {/* Buy Pagination */}
           {totalBuyPages > 1 && (
