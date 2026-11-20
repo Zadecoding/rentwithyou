@@ -10,7 +10,9 @@ export const metadata: Metadata = {
   description:
     'Find your next home with the widest choice of rentals, homes and commercial spaces. Trusted owners, dealers, packers & movers, and furniture solutions in Gurgaon and NCR.',
   icons: {
-    icon: '/favicon.ico',
+    icon: '/logo-icon.svg',
+    shortcut: '/logo-icon.svg',
+    apple: '/logo-icon.svg',
   },
 };
 

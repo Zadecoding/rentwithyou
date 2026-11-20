@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import InstagramIcon from './InstagramIcon';
 import PackersMoversModal from './PackersMoversModal';
+import Logo from './Logo';
 import FurnitureModal from './FurnitureModal';
 
 export default function Footer() {
@@ -58,19 +59,9 @@ export default function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 pb-12 border-b border-gray-700/60">
             {/* Column 1: Brand Info */}
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#E59A38] text-white font-extrabold flex items-center justify-center text-2xl shadow-md">
-                  R
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black tracking-tight text-white">
-                    Rent With You
-                  </h3>
-                  <p className="text-[11px] font-bold tracking-widest text-[#E59A38] uppercase">
-                    {BRAND.tagline}
-                  </p>
-                </div>
-              </div>
+              <Link href="/" className="inline-block" aria-label="Rent With You - Home">
+                <Logo variant="light" height={48} className="hover:opacity-90 transition-opacity" />
+              </Link>
 
               <p className="text-sm text-gray-300 font-medium">
                 Welcome to Rent With You

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { BRAND, getWhatsAppLink } from '@/lib/constants';
 import { submitEnquiry } from '@/lib/propertyStore';
+import Logo from './Logo';
 import { Phone, MessageCircle, Mail, MapPin, X, CheckCircle2 } from 'lucide-react';
 
 interface ConnectUsModalProps {
@@ -63,8 +64,8 @@ export default function ConnectUsModal({ isOpen, onClose }: ConnectUsModalProps)
             <X size={20} />
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#E59A38] text-white font-bold flex items-center justify-center text-xl shadow-md">
-              R
+            <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center shadow-md p-1.5">
+              <Logo variant="icon" height={32} />
             </div>
             <div>
               <h3 className="text-xl font-bold">Connect With Rent With You</h3>
