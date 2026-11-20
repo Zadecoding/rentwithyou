@@ -77,12 +77,15 @@ export default function PropertyDetailPage() {
 
   const wishlisted = isWishlisted(property.id);
 
-  const images =
-    property.images && property.images.length > 0
-      ? property.images
-      : ['https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&auto=format&fit=crop&q=80'];
+  const defaultFallbackImage =
+    'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&auto=format&fit=crop&q=80';
 
-  const currentPhoto = images[selectedPhotoIndex] || images[0];
+  const rawImages = property.images && Array.isArray(property.images) && property.images.length > 0
+    ? property.images.filter(Boolean)
+    : [defaultFallbackImage];
+
+  const images = rawImages.length > 0 ? rawImages : [defaultFallbackImage];
+  const currentPhoto = images[selectedPhotoIndex] || images[0] || defaultFallbackImage;
 
   const handleShare = () => {
     if (typeof window !== 'undefined') {
@@ -121,24 +124,34 @@ export default function PropertyDetailPage() {
         {/* LEFT COLUMN: Main Photo Viewer & Thumbnails */}
         <div className="lg:col-span-7 space-y-4">
           {/* Main Large Photo */}
-          <div className="relative aspect-16/10 rounded-3xl overflow-hidden bg-gray-100 shadow-md group">
+          <div className="relative w-full h-72 sm:h-96 md:h-[440px] rounded-3xl overflow-hidden bg-gray-900 shadow-md group">
             <Image
               src={currentPhoto}
               alt={property.title}
               fill
               priority
+              unoptimized
               sizes="(max-width: 1024px) 100vw, 60vw"
               className="object-cover"
             />
             {/* Click to open Lightbox */}
             <button
               onClick={() => setIsLightboxOpen(true)}
-              className="absolute bottom-4 right-4 bg-black/60 hover:bg-black/80 text-white p-2.5 rounded-xl backdrop-blur-xs flex items-center gap-1.5 text-xs font-semibold shadow-md transition"
+              className="absolute bottom-4 right-4 bg-black/60 hover:bg-black/80 text-white p-2.5 rounded-xl backdrop-blur-xs flex items-center gap-1.5 text-xs font-semibold shadow-md transition cursor-pointer"
               title="View full screen photo"
             >
               <Maximize2 size={16} />
               <span className="hidden sm:inline">Expand</span>
             </button>
+
+            {/* Photo Index Indicator */}
+            {images.length > 1 && (
+              <div className="absolute bottom-4 left-4 z-10">
+                <span className="px-3 py-1 rounded-lg bg-black/60 backdrop-blur-xs text-white text-xs font-semibold">
+                  Photo {selectedPhotoIndex + 1} of {images.length}
+                </span>
+              </div>
+            )}
 
             {property.badge && (
               <div className="absolute top-4 left-4 z-10">
@@ -151,12 +164,12 @@ export default function PropertyDetailPage() {
 
           {/* Interactive Thumbnails Gallery (Photo 2, Photo 3, Photo 4...) */}
           {images.length > 1 && (
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
               {images.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setSelectedPhotoIndex(idx)}
-                  className={`relative aspect-4/3 rounded-xl overflow-hidden bg-gray-100 border-2 transition ${
+                  className={`relative w-full h-20 sm:h-24 rounded-xl overflow-hidden bg-gray-100 border-2 transition cursor-pointer ${
                     selectedPhotoIndex === idx
                       ? 'border-[#E59A38] ring-2 ring-[#E59A38]/30 scale-95'
                       : 'border-transparent opacity-80 hover:opacity-100'
@@ -166,11 +179,12 @@ export default function PropertyDetailPage() {
                     src={img}
                     alt={`Photo ${idx + 1}`}
                     fill
-                    sizes="(max-width: 768px) 25vw, 15vw"
+                    unoptimized
+                    sizes="120px"
                     className="object-cover"
                   />
-                  <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-md bg-black/60 text-white text-[10px] font-mono">
-                    Photo {idx + 1}
+                  <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-md bg-black/60 text-white text-[9px] font-mono">
+                    {idx + 1}
                   </span>
                 </button>
               ))}
@@ -341,6 +355,7 @@ export default function PropertyDetailPage() {
               src={currentPhoto}
               alt={property.title}
               fill
+              unoptimized
               className="object-contain"
             />
           </div>

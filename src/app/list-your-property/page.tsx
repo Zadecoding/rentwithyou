@@ -23,6 +23,7 @@ import {
   Briefcase,
   ExternalLink,
   Sparkles,
+  Plus,
 } from 'lucide-react';
 
 export default function ListYourPropertyPage() {
@@ -103,11 +104,12 @@ export default function ListYourPropertyPage() {
   // Handle image selection
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
-    const newFiles = Array.from(files).slice(0, 8); // max 8 photos
-    setImageFiles((prev) => [...prev, ...newFiles]);
+    const incoming = Array.from(files);
+    setImageFiles((prev) => [...prev, ...incoming].slice(0, 15));
 
-    const newPreviews = newFiles.map((f) => URL.createObjectURL(f));
-    setImagePreviews((prev) => [...prev, ...newPreviews]);
+    const newPreviews = incoming.map((f) => URL.createObjectURL(f));
+    setImagePreviews((prev) => [...prev, ...newPreviews].slice(0, 15));
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const removePhoto = (index: number) => {
@@ -880,12 +882,13 @@ export default function ListYourPropertyPage() {
                         {imagePreviews.map((src, i) => (
                           <div
                             key={i}
-                            className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 group"
+                            className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 group bg-gray-100"
                           >
                             <Image
                               src={src}
                               alt="preview"
                               fill
+                              unoptimized
                               className="object-cover"
                             />
                             {i === 0 && (
@@ -896,13 +899,25 @@ export default function ListYourPropertyPage() {
                             <button
                               type="button"
                               onClick={() => removePhoto(i)}
-                              className="absolute top-1 right-1 p-1 rounded-full bg-red-600 text-white opacity-90 hover:opacity-100 cursor-pointer"
+                              className="absolute top-1 right-1 p-1 rounded-full bg-red-600 text-white opacity-90 hover:opacity-100 cursor-pointer shadow-xs transition"
                               title="Delete photo"
                             >
                               <X size={12} />
                             </button>
                           </div>
                         ))}
+
+                        {imagePreviews.length < 15 && (
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex flex-col items-center justify-center aspect-square rounded-xl border-2 border-dashed border-gray-300 hover:border-[#E59A38] hover:bg-amber-50/30 text-gray-500 hover:text-[#E59A38] transition cursor-pointer"
+                            title="Add more photos"
+                          >
+                            <Plus size={18} />
+                            <span className="text-[10px] font-bold mt-1">Add More</span>
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

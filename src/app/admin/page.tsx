@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
@@ -28,6 +28,7 @@ import {
   Plus,
   Search,
   X,
+  Upload,
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -56,10 +57,15 @@ export default function AdminPage() {
   const [newBadge, setNewBadge] = useState<PropertyBadge>('Verified');
   const [newDescription, setNewDescription] = useState('');
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
+  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
+  const addFileInputRef = useRef<HTMLInputElement>(null);
   const [isCreating, setIsCreating] = useState(false);
 
   // Edit Property Modal State
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [editImageFiles, setEditImageFiles] = useState<File[]>([]);
+  const [editImagePreviews, setEditImagePreviews] = useState<string[]>([]);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
@@ -147,6 +153,48 @@ export default function AdminPage() {
     );
   };
 
+  // Photo handlers for Add Property Modal
+  const handleAddModalFiles = (files: FileList | null) => {
+    if (!files) return;
+    const incoming = Array.from(files);
+    setNewImageFiles((prev) => [...prev, ...incoming].slice(0, 15));
+    const previews = incoming.map((f) => URL.createObjectURL(f));
+    setNewImagePreviews((prev) => [...prev, ...previews].slice(0, 15));
+    if (addFileInputRef.current) addFileInputRef.current.value = '';
+  };
+
+  const removeAddModalPhoto = (index: number) => {
+    setNewImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setNewImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Photo handlers for Edit Property Modal
+  const openEditModal = (prop: Property) => {
+    setEditingProperty({ ...prop, images: prop.images || [] });
+    setEditImageFiles([]);
+    setEditImagePreviews([]);
+  };
+
+  const handleEditModalFiles = (files: FileList | null) => {
+    if (!files) return;
+    const incoming = Array.from(files);
+    setEditImageFiles((prev) => [...prev, ...incoming].slice(0, 15));
+    const previews = incoming.map((f) => URL.createObjectURL(f));
+    setEditImagePreviews((prev) => [...prev, ...previews].slice(0, 15));
+    if (editFileInputRef.current) editFileInputRef.current.value = '';
+  };
+
+  const removeExistingEditPhoto = (index: number) => {
+    if (!editingProperty) return;
+    const updatedImages = (editingProperty.images || []).filter((_, i) => i !== index);
+    setEditingProperty({ ...editingProperty, images: updatedImages });
+  };
+
+  const removeNewEditPhoto = (index: number) => {
+    setEditImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setEditImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // Add new property as admin
   const handleCreateProperty = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -200,6 +248,7 @@ export default function AdminPage() {
         setNewPrice('');
         setNewArea('');
         setNewImageFiles([]);
+        setNewImagePreviews([]);
       }
     } catch (err) {
       console.error(err);
@@ -215,11 +264,20 @@ export default function AdminPage() {
     setIsUpdating(true);
 
     try {
-      await updateProperty(editingProperty.id, editingProperty);
+      let finalImages = [...(editingProperty.images || [])];
+      if (editImageFiles.length > 0) {
+        const newlyUploaded = await uploadPropertyImages(editImageFiles);
+        finalImages = [...finalImages, ...newlyUploaded];
+      }
+
+      const updatedProp = { ...editingProperty, images: finalImages };
+      await updateProperty(editingProperty.id, updatedProp);
       setProperties((prev) =>
-        prev.map((p) => (p.id === editingProperty.id ? editingProperty : p))
+        prev.map((p) => (p.id === editingProperty.id ? updatedProp : p))
       );
       setEditingProperty(null);
+      setEditImageFiles([]);
+      setEditImagePreviews([]);
     } catch (err) {
       console.error(err);
     } finally {
@@ -456,8 +514,8 @@ export default function AdminPage() {
                         <span>Approve & Publish</span>
                       </button>
                       <button
-                        onClick={() => setEditingProperty(prop)}
-                        className="py-2.5 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition"
+                        onClick={() => openEditModal(prop)}
+                        className="py-2.5 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition cursor-pointer"
                         title="Edit details before publishing"
                       >
                         <Edit size={16} />
@@ -572,8 +630,8 @@ export default function AdminPage() {
                       </td>
                       <td className="py-3.5 px-4 text-right space-x-1 whitespace-nowrap">
                         <button
-                          onClick={() => setEditingProperty(prop)}
-                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#1B2A4A] hover:bg-gray-100"
+                          onClick={() => openEditModal(prop)}
+                          className="p-1.5 rounded-lg text-gray-600 hover:text-[#1B2A4A] hover:bg-gray-100 cursor-pointer"
                           title="Edit"
                         >
                           <Edit size={14} />
@@ -820,18 +878,82 @@ export default function AdminPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Photos</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-gray-700">Property Photos</label>
+                  <span className="text-[11px] text-gray-500 font-medium">
+                    {newImagePreviews.length}/15 photos selected
+                  </span>
+                </div>
+
                 <input
+                  ref={addFileInputRef}
                   type="file"
                   multiple
                   accept="image/*"
-                  onChange={(e) => {
-                    if (e.target.files) {
-                      setNewImageFiles(Array.from(e.target.files));
-                    }
-                  }}
-                  className="w-full text-xs"
+                  onChange={(e) => handleAddModalFiles(e.target.files)}
+                  className="hidden"
                 />
+
+                <div
+                  onClick={() => addFileInputRef.current?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleAddModalFiles(e.dataTransfer.files);
+                  }}
+                  className="border-2 border-dashed border-gray-300 hover:border-[#E59A38] bg-gray-50/70 hover:bg-amber-50/20 rounded-2xl p-4 text-center cursor-pointer transition group"
+                >
+                  <Upload size={24} className="mx-auto text-[#E59A38] mb-1 group-hover:scale-110 transition-transform" />
+                  <p className="text-xs font-bold text-gray-800">
+                    Click to browse or drag &amp; drop photos here
+                  </p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">
+                    Select multiple photos (PNG, JPG, WebP) &bull; Up to 15 photos
+                  </p>
+                </div>
+
+                {newImagePreviews.length > 0 && (
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5 mt-3">
+                    {newImagePreviews.map((src, idx) => (
+                      <div
+                        key={idx}
+                        className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 group bg-gray-100"
+                      >
+                        <Image
+                          src={src}
+                          alt={`preview-${idx}`}
+                          fill
+                          unoptimized
+                          className="object-cover"
+                        />
+                        {idx === 0 && (
+                          <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-[#E59A38] text-white text-[9px] font-bold shadow-xs">
+                            Cover
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeAddModalPhoto(idx)}
+                          className="absolute top-1 right-1 p-1 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-xs transition cursor-pointer"
+                          title="Remove photo"
+                        >
+                          <X size={11} />
+                        </button>
+                      </div>
+                    ))}
+                    {newImagePreviews.length < 15 && (
+                      <button
+                        type="button"
+                        onClick={() => addFileInputRef.current?.click()}
+                        className="flex flex-col items-center justify-center aspect-square rounded-xl border-2 border-dashed border-gray-300 hover:border-[#E59A38] hover:bg-amber-50/30 text-gray-500 hover:text-[#E59A38] transition cursor-pointer"
+                        title="Add more photos"
+                      >
+                        <Plus size={18} />
+                        <span className="text-[10px] font-bold mt-1">Add More</span>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="pt-2">
@@ -951,6 +1073,112 @@ export default function AdminPage() {
                   }
                   className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-gray-300"
                 />
+              </div>
+
+              {/* Photo Management in Edit Modal */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-gray-700">Manage Property Photos</label>
+                  <button
+                    type="button"
+                    onClick={() => editFileInputRef.current?.click()}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#E59A38] hover:underline cursor-pointer"
+                  >
+                    <Plus size={13} />
+                    <span>Add More Photos</span>
+                  </button>
+                </div>
+
+                <input
+                  ref={editFileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => handleEditModalFiles(e.target.files)}
+                  className="hidden"
+                />
+
+                {/* Existing Photos */}
+                {editingProperty.images && editingProperty.images.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-[11px] font-semibold text-gray-500 mb-1.5">
+                      Existing Photos ({editingProperty.images.length})
+                    </p>
+                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5">
+                      {editingProperty.images.map((src, idx) => (
+                        <div
+                          key={`existing-${idx}`}
+                          className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 bg-gray-100 group"
+                        >
+                          <Image
+                            src={src}
+                            alt={`existing-${idx}`}
+                            fill
+                            unoptimized
+                            className="object-cover"
+                          />
+                          {idx === 0 && (
+                            <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-[#E59A38] text-white text-[9px] font-bold shadow-xs">
+                              Cover
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => removeExistingEditPhoto(idx)}
+                            className="absolute top-1 right-1 p-1 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-xs transition cursor-pointer"
+                            title="Delete this photo"
+                          >
+                            <X size={11} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Newly Added Photos Preview */}
+                {editImagePreviews.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-[11px] font-semibold text-emerald-600 mb-1.5">
+                      New Photos to Upload ({editImagePreviews.length})
+                    </p>
+                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5">
+                      {editImagePreviews.map((src, idx) => (
+                        <div
+                          key={`new-${idx}`}
+                          className="relative aspect-square rounded-xl overflow-hidden border-2 border-emerald-500 bg-gray-100 group"
+                        >
+                          <Image
+                            src={src}
+                            alt={`new-${idx}`}
+                            fill
+                            unoptimized
+                            className="object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeNewEditPhoto(idx)}
+                            className="absolute top-1 right-1 p-1 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-xs transition cursor-pointer"
+                            title="Remove new photo"
+                          >
+                            <X size={11} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Upload Action Box */}
+                <div
+                  onClick={() => editFileInputRef.current?.click()}
+                  className="border-2 border-dashed border-gray-300 hover:border-[#E59A38] bg-gray-50/70 hover:bg-amber-50/20 rounded-2xl p-3 text-center cursor-pointer transition"
+                >
+                  <p className="text-xs font-bold text-gray-700 flex items-center justify-center gap-1.5">
+                    <Upload size={14} className="text-[#E59A38]" />
+                    <span>Click to browse and upload additional photos</span>
+                  </p>
+                </div>
               </div>
 
               <div className="pt-2">
