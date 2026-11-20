@@ -48,8 +48,19 @@ export async function fetchProperties(category?: PropertyCategory): Promise<Prop
       query = query.order('created_at', { ascending: false });
 
       const { data, error } = await query;
-      if (!error && data && data.length > 0) {
-        return data as Property[];
+      if (!error && data) {
+        // Merge Supabase properties with local/initial properties to guarantee full listings
+        const localProps = getStoredProperties();
+        const approvedLocal = localProps.filter(
+          (p) => p.status === 'approved' && (!category || p.category === category)
+        );
+        const combined = [...(data as Property[])];
+        for (const loc of approvedLocal) {
+          if (!combined.some((p) => p.id === loc.id || p.property_code === loc.property_code)) {
+            combined.push(loc);
+          }
+        }
+        return combined;
       }
     } catch (e) {
       console.warn('Supabase fetch failed, falling back to local store:', e);
@@ -131,15 +142,16 @@ export async function fetchUserProperties(
 const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
 export async function fetchPropertyById(id: string): Promise<Property | null> {
+  const cleanId = decodeURIComponent(id || '').trim();
   const supabase = createClient();
 
-  if (supabase) {
+  if (supabase && cleanId) {
     try {
       let query = supabase.from('properties').select('*');
-      if (isUuid(id)) {
-        query = query.or(`id.eq.${id},property_code.eq.${id}`);
+      if (isUuid(cleanId)) {
+        query = query.or(`id.eq.${cleanId},property_code.eq.${cleanId}`);
       } else {
-        query = query.eq('property_code', id);
+        query = query.eq('property_code', cleanId);
       }
       const { data, error } = await query.maybeSingle();
 
@@ -155,9 +167,9 @@ export async function fetchPropertyById(id: string): Promise<Property | null> {
   return (
     all.find(
       (p) =>
-        p.id === id ||
-        p.property_code === id ||
-        p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') === id
+        p.id === cleanId ||
+        p.property_code === cleanId ||
+        p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') === cleanId
     ) || null
   );
 }

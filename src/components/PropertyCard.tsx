@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Property } from '@/types';
 import { useWishlist } from '@/context/WishlistContext';
@@ -12,6 +12,7 @@ interface PropertyCardProps {
 }
 
 export default function PropertyCard({ property }: PropertyCardProps) {
+  const router = useRouter();
   const { isWishlisted, toggleWishlist } = useWishlist();
   const wishlisted = isWishlisted(property.id);
 
@@ -44,8 +45,20 @@ export default function PropertyCard({ property }: PropertyCardProps) {
   const ctaText = isBuyOrProject ? 'Details' : 'View';
   const propertyUrl = `/property/${property.property_code || property.id}`;
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // If clicking on wishlist button or inside another button, don't navigate
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) {
+      return;
+    }
+    router.push(propertyUrl);
+  };
+
   return (
-    <div className="group bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between">
+    <div
+      onClick={handleCardClick}
+      className="group bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer"
+    >
       <div>
         {/* Top Image Container */}
         <div className="relative w-full h-48 sm:h-52 overflow-hidden bg-gray-100">
@@ -80,7 +93,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
               toggleWishlist(property.id);
             }}
             aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-            className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center text-gray-700 hover:text-rose-600 hover:scale-110 shadow-md transition-all duration-200"
+            className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center text-gray-700 hover:text-rose-600 hover:scale-110 shadow-md transition-all duration-200 cursor-pointer"
           >
             <Heart
               size={18}
@@ -91,11 +104,9 @@ export default function PropertyCard({ property }: PropertyCardProps) {
 
         {/* Card Content */}
         <div className="p-4 sm:p-5">
-          <Link href={propertyUrl} className="block group-hover:text-[#E59A38] transition-colors">
-            <h3 className="text-base sm:text-lg font-bold text-[#1B2A4A] line-clamp-1">
-              {property.title}
-            </h3>
-          </Link>
+          <h3 className="text-base sm:text-lg font-bold text-[#1B2A4A] group-hover:text-[#E59A38] transition-colors line-clamp-1">
+            {property.title}
+          </h3>
 
           {/* Specs line: Bedrooms | Furnishing / Status | Area */}
           <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1.5 flex-wrap">
@@ -120,12 +131,16 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           </span>
         </div>
 
-        <Link
-          href={propertyUrl}
-          className="px-4 py-2 rounded-xl bg-[#1B2A4A] text-white hover:bg-[#142038] text-xs sm:text-sm font-bold transition shadow-xs hover:shadow-md"
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            router.push(propertyUrl);
+          }}
+          className="px-4 py-2 rounded-xl bg-[#1B2A4A] text-white hover:bg-[#E59A38] text-xs sm:text-sm font-bold transition-colors shadow-xs hover:shadow-md cursor-pointer"
         >
           {ctaText}
-        </Link>
+        </button>
       </div>
     </div>
   );
