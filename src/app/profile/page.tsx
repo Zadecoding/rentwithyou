@@ -123,7 +123,7 @@ export default function ProfilePage() {
         <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-lg">
           <div className="text-center mb-6">
             <div className="flex justify-center mb-3">
-              <Logo variant="icon" size="md" />
+              <Logo variant="icon" height={48} />
             </div>
             <h1 className="text-2xl font-black text-[#1B2A4A]">
               {authMode === 'signin' ? 'Login' : 'Sign Up'}

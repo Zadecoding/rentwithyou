@@ -6,13 +6,25 @@ interface LogoProps {
   variant?: 'dark' | 'light' | 'icon';
   className?: string;
   height?: number;
+  size?: 'sm' | 'md' | 'lg' | number;
 }
 
 export default function Logo({
   variant = 'dark',
   className = '',
-  height = 44,
+  height,
+  size,
 }: LogoProps) {
+  const resolvedHeight = typeof size === 'number'
+    ? size
+    : size === 'sm'
+    ? 32
+    : size === 'md'
+    ? 48
+    : size === 'lg'
+    ? 64
+    : (height ?? 44);
+
   const isLight = variant === 'light';
   const strokeColor = isLight ? '#FFFFFF' : '#1B2A4A';
   const textColor = isLight ? '#FFFFFF' : '#1B2A4A';
@@ -23,9 +35,9 @@ export default function Logo({
     return (
       <svg
         viewBox="0 0 160 160"
-        height={height}
+        height={resolvedHeight}
         className={className}
-        style={{ height, width: 'auto' }}
+        style={{ height: resolvedHeight, width: 'auto' }}
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
@@ -43,9 +55,9 @@ export default function Logo({
   return (
     <svg
       viewBox="0 0 540 148"
-      height={height}
+      height={resolvedHeight}
       className={className}
-      style={{ height, width: 'auto' }}
+      style={{ height: resolvedHeight, width: 'auto' }}
       xmlns="http://www.w3.org/2000/svg"
     >
       {/* House Icon Mark */}
