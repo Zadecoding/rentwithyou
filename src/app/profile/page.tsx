@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useWishlist } from '@/context/WishlistContext';
-import { fetchAllPropertiesForAdmin, deleteProperty } from '@/lib/propertyStore';
+import { fetchAllPropertiesForAdmin, fetchUserProperties, deleteProperty } from '@/lib/propertyStore';
 import { Property } from '@/types';
 import {
   ShieldCheck,
@@ -46,15 +46,13 @@ export default function ProfilePage() {
     async function loadUserProps() {
       if (!user) return;
       setLoadingProps(true);
-      const all = await fetchAllPropertiesForAdmin();
-      // Match properties by owner_email or user_id
-      const mine = all.filter(
-        (p) =>
-          (p.owner_email && p.owner_email.toLowerCase() === user.email?.toLowerCase()) ||
-          p.user_id === user.id ||
-          isAdmin // If admin, can see submitted
-      );
-      setMyProperties(mine);
+      if (isAdmin) {
+        const all = await fetchAllPropertiesForAdmin();
+        setMyProperties(all);
+      } else {
+        const mine = await fetchUserProperties(user.id, user.email);
+        setMyProperties(mine);
+      }
       setLoadingProps(false);
     }
     loadUserProps();

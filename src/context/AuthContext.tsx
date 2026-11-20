@@ -15,6 +15,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   demoLoginAsAdmin: () => void;
   demoLoginAsUser: () => void;
+  demoLoginAsOwner: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -155,6 +156,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('rw_demo_user', JSON.stringify(normalUser));
   };
 
+  const demoLoginAsOwner = () => {
+    const ownerUser = {
+      id: 'owner-001',
+      email: 'owner.gurgaon@gmail.com',
+      app_metadata: { role: 'owner' },
+      user_metadata: { full_name: 'Suresh Singhania', role: 'Owner' },
+      aud: 'authenticated',
+      created_at: new Date().toISOString(),
+    } as unknown as User;
+    setUser(ownerUser);
+    localStorage.setItem('rw_demo_user', JSON.stringify(ownerUser));
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -167,6 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signOut,
         demoLoginAsAdmin,
         demoLoginAsUser,
+        demoLoginAsOwner,
       }}
     >
       {children}

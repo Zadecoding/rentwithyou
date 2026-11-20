@@ -86,6 +86,48 @@ export async function fetchAllPropertiesForAdmin(): Promise<Property[]> {
   return getStoredProperties();
 }
 
+export async function fetchUserProperties(
+  userId?: string | null,
+  userEmail?: string | null
+): Promise<Property[]> {
+  const supabase = createClient();
+  const stored = getStoredProperties();
+  const localMatching = stored.filter(
+    (p) =>
+      (userId && p.user_id === userId) ||
+      (userEmail && p.owner_email && p.owner_email.toLowerCase() === userEmail.toLowerCase())
+  );
+
+  if (supabase && (userId || userEmail)) {
+    try {
+      let query = supabase.from('properties').select('*');
+      if (userId && isUuid(userId) && userEmail) {
+        query = query.or(`user_id.eq.${userId},owner_email.eq.${userEmail}`);
+      } else if (userId && isUuid(userId)) {
+        query = query.eq('user_id', userId);
+      } else if (userEmail) {
+        query = query.eq('owner_email', userEmail);
+      }
+      query = query.order('created_at', { ascending: false });
+
+      const { data, error } = await query;
+      if (!error && data) {
+        const combined = [...(data as Property[])];
+        for (const loc of localMatching) {
+          if (!combined.some((p) => p.id === loc.id || p.property_code === loc.property_code)) {
+            combined.push(loc);
+          }
+        }
+        return combined;
+      }
+    } catch (e) {
+      console.warn('Supabase fetchUserProperties error:', e);
+    }
+  }
+
+  return localMatching;
+}
+
 const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
 export async function fetchPropertyById(id: string): Promise<Property | null> {
@@ -124,8 +166,13 @@ export async function createProperty(
   propertyData: Omit<Property, 'id' | 'property_code' | 'created_at'>
 ): Promise<{ success: boolean; data?: Property; error?: string }> {
   const supabase = createClient();
-  const randomSuffix = Math.floor(1000 + Math.random() * 9000).toString();
-  const propertyCode = randomSuffix;
+  const current = getStoredProperties();
+
+  // Generate a distinct 4-digit property code
+  let propertyCode = Math.floor(1000 + Math.random() * 9000).toString();
+  while (current.some((p) => p.property_code === propertyCode)) {
+    propertyCode = Math.floor(1000 + Math.random() * 9000).toString();
+  }
 
   const newProperty: Property = {
     ...propertyData,
@@ -136,6 +183,9 @@ export async function createProperty(
 
   if (supabase) {
     try {
+      const sanitizedUserId =
+        newProperty.user_id && isUuid(newProperty.user_id) ? newProperty.user_id : null;
+
       const { data, error } = await supabase
         .from('properties')
         .insert([
@@ -160,7 +210,7 @@ export async function createProperty(
             owner_name: newProperty.owner_name,
             owner_phone: newProperty.owner_phone,
             owner_email: newProperty.owner_email || null,
-            user_id: newProperty.user_id || null,
+            user_id: sanitizedUserId,
             status: newProperty.status,
           },
         ])
@@ -169,9 +219,10 @@ export async function createProperty(
 
       if (!error && data) {
         // Also save to local storage for immediate UI reflect
-        const current = getStoredProperties();
         savePropertiesToStorage([data as Property, ...current]);
         return { success: true, data: data as Property };
+      } else if (error) {
+        console.warn('Supabase property insert error:', error);
       }
     } catch (e: unknown) {
       console.warn('Failed to insert into Supabase, saving locally:', e);
@@ -179,7 +230,6 @@ export async function createProperty(
   }
 
   // Save locally
-  const current = getStoredProperties();
   const updated = [newProperty, ...current];
   savePropertiesToStorage(updated);
   return { success: true, data: newProperty };
