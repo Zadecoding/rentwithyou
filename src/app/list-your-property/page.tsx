@@ -33,7 +33,6 @@ export default function ListYourPropertyPage() {
     signInWithEmail,
     signUpWithEmail,
     signOut,
-    demoLoginAsOwner,
     isLoading: isAuthLoading,
   } = useAuth();
 
@@ -382,19 +381,9 @@ export default function ListYourPropertyPage() {
                   </ul>
                 </div>
 
-                {/* Instant Quick Demo Login Button for instant access */}
-                <div className="pt-6 relative z-10 border-t border-white/10 mt-6">
-                  <button
-                    type="button"
-                    onClick={demoLoginAsOwner}
-                    className="w-full py-3 px-4 rounded-xl bg-[#E59A38] hover:bg-[#d68b2a] text-white font-extrabold text-xs transition flex items-center justify-center gap-2 shadow-md cursor-pointer"
-                  >
-                    <Zap size={16} />
-                    <span>⚡ One-Click Demo Owner Login</span>
-                  </button>
-                  <span className="text-[10px] text-gray-400 block text-center mt-1.5">
-                    For instant testing without entering email/password
-                  </span>
+                <div className="pt-6 relative z-10 border-t border-white/10 mt-6 text-[11px] text-gray-300 flex items-center gap-2">
+                  <ShieldCheck size={14} className="text-[#E59A38] shrink-0" />
+                  <span>Secure & verified platform for genuine property owners</span>
                 </div>
               </div>
 
