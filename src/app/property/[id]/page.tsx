@@ -97,6 +97,12 @@ export default function PropertyDetailPage() {
 
   const whatsappMessage = `Hi Rent With You, I am interested in Property ID: [${property.property_code}] - ${property.title} in ${property.area}. Please share details and arrange a visit.`;
 
+  // Filter out any legacy metadata lines from description if present
+  const cleanDescription = (property.description || '')
+    .replace(/Listed by:\s*[^|\n]+(\s*\|\s*)?/gi, '')
+    .replace(/Property ID:\s*[^\n|]+/gi, '')
+    .trim();
+
   return (
     <div className="w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 2xl:px-16 py-6">
       {/* Breadcrumb (Matches Wireframe Page 7: Home > Rent > 2 BHK Apartment) */}
@@ -305,7 +311,7 @@ export default function PropertyDetailPage() {
               Property Description
             </h3>
             <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line bg-gray-50/60 p-4 rounded-xl border border-gray-100">
-              {property.description}
+              {cleanDescription || property.description}
             </p>
           </div>
 
@@ -330,13 +336,6 @@ export default function PropertyDetailPage() {
               <Phone size={18} className="text-[#E59A38]" />
               <span>Call now</span>
             </a>
-          </div>
-
-          {/* Metadata line (Matches Wireframe Page 7: Listed by: [Owner / Dealer name] | Property ID: [0001]) */}
-          <div className="pt-2 text-center text-xs text-gray-500 font-medium">
-            <span>Listed by: <b>{property.owner_name} ({property.listed_by_role})</b></span>
-            <span className="mx-2 text-gray-300">|</span>
-            <span>Property ID: <b className="font-mono text-gray-800">{property.property_code}</b></span>
           </div>
         </div>
       </div>
