@@ -27,15 +27,6 @@ import {
 
 const ROTATING_WORDS = ['home', 'luxury flat', 'dream villa', 'studio room', 'office space'];
 
-const TRENDING_LOCALITIES = [
-  'Sector 57',
-  'Golf Course Rd',
-  'DLF Phase 5',
-  'Sohna Road',
-  'Cyber City',
-  'Sector 65',
-];
-
 const LIVE_UPDATES = [
   { icon: '⚡', text: 'Verified 3 BHK Apartment listed in Sector 57, Gurgaon' },
   { icon: '🔥', text: 'Instant Move-in Studio available on Golf Course Road' },
@@ -227,27 +218,6 @@ export default function HomePage() {
                     <Search size={18} />
                     <span>Search</span>
                   </button>
-                </div>
-
-                {/* Trending Localities Quick Chips */}
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="text-[11px] text-gray-400 font-semibold flex items-center gap-1 mr-1">
-                    <Sparkles size={12} className="text-[#E59A38]" /> Trending:
-                  </span>
-                  {TRENDING_LOCALITIES.map((loc) => (
-                    <button
-                      key={loc}
-                      type="button"
-                      onClick={() => setSearchArea(loc)}
-                      className={`text-[11px] font-medium px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${
-                        searchArea === loc
-                          ? 'bg-[#E59A38] text-white shadow-xs font-bold'
-                          : 'bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white border border-white/10'
-                      }`}
-                    >
-                      {loc}
-                    </button>
-                  ))}
                 </div>
 
                 {/* Filter Dropdowns: Budget, Property type, Bedrooms, Furnishing */}
