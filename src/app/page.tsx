@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { BRAND } from '@/lib/constants';
 import { fetchProperties } from '@/lib/propertyStore';
 import { Property, PropertyCategory } from '@/types';
 import PropertyCard from '@/components/PropertyCard';
@@ -563,30 +562,6 @@ export default function HomePage() {
                 <span>Post Your Property</span>
               </Link>
             </div>
-          </div>
-        </div>
-
-        {/* Sub-bar with contact info */}
-        <div className="mt-8 bg-gradient-to-r from-[#1B2A4A] via-[#203152] to-[#1B2A4A] text-white py-3.5 px-6 rounded-2xl flex flex-col md:flex-row items-center justify-between text-xs gap-3 shadow-sm border border-white/10">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-gray-300">
-            <span className="font-bold text-white flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#E59A38] animate-ping" />
-              Rent With You
-            </span>
-            <span>|</span>
-            <span>Phone/WhatsApp: {BRAND.phone}</span>
-            <span className="hidden sm:inline">|</span>
-            <span>Email: {BRAND.email}</span>
-            <span className="hidden lg:inline">|</span>
-            <span className="hidden lg:inline">Instagram: {BRAND.instagram}</span>
-          </div>
-          <div className="flex items-center gap-3 text-gray-300 text-xs">
-            <Link href="/" className="hover:text-[#E59A38] transition">Home</Link>
-            <Link href="/list-your-property" className="hover:text-[#E59A38] transition">For Owner &amp; Developer</Link>
-            <Link href="/rent" className="hover:text-[#E59A38] transition">Rent</Link>
-            <Link href="/buy" className="hover:text-[#E59A38] transition">Buy</Link>
-            <Link href="/commercial" className="hover:text-[#E59A38] transition">Commercial</Link>
-            <Link href="/about" className="hover:text-[#E59A38] transition">About</Link>
           </div>
         </div>
       </section>
