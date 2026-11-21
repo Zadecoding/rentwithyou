@@ -39,7 +39,7 @@ const TRENDING_LOCALITIES = [
 const LIVE_UPDATES = [
   { icon: '⚡', text: 'Verified 3 BHK Apartment listed in Sector 57, Gurgaon' },
   { icon: '🔥', text: 'Instant Move-in Studio available on Golf Course Road' },
-  { icon: '✨', text: 'Zero Brokerage Deal closed in DLF Phase 5 today' },
+  { icon: '✨', text: 'Verified Deal closed in DLF Phase 5 today' },
   { icon: '🚚', text: 'Packers & Movers completed 8 seamless shifts this week' },
   { icon: '🏢', text: 'Grade-A Commercial Office leased in Cyber City' },
   { icon: '⭐', text: '4.9/5 Renter Satisfaction across 500+ families' },
@@ -152,8 +152,6 @@ export default function HomePage() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
               <span>100% Verified Properties in Gurgaon</span>
-              <span className="text-[#E59A38]">•</span>
-              <span className="text-gray-300">Direct Owner &amp; Dealer Connect</span>
             </div>
 
             {/* Main Headline with Dynamic Rotating Word */}
@@ -357,19 +355,7 @@ export default function HomePage() {
             </div>
 
             {/* Hero Key Trust Metrics Row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8">
-              <div className="glass-panel rounded-2xl p-3.5 sm:p-4 text-center hover:bg-white/10 transition-all duration-300 hover:-translate-y-1 hover:border-[#E59A38]/50 group">
-                <ShieldCheck size={20} className="mx-auto text-[#E59A38] mb-1 group-hover:scale-110 transition-transform" />
-                <p className="text-lg sm:text-xl font-black text-white">5,000+</p>
-                <p className="text-[11px] text-gray-300 font-medium">Verified Listings</p>
-              </div>
-
-              <div className="glass-panel rounded-2xl p-3.5 sm:p-4 text-center hover:bg-white/10 transition-all duration-300 hover:-translate-y-1 hover:border-[#E59A38]/50 group">
-                <Zap size={20} className="mx-auto text-amber-400 mb-1 group-hover:scale-110 transition-transform" />
-                <p className="text-lg sm:text-xl font-black text-white">Zero</p>
-                <p className="text-[11px] text-gray-300 font-medium">Brokerage Options</p>
-              </div>
-
+            <div className="grid grid-cols-1 sm:grid-cols-2 max-w-md mx-auto gap-3 mt-8">
               <div className="glass-panel rounded-2xl p-3.5 sm:p-4 text-center hover:bg-white/10 transition-all duration-300 hover:-translate-y-1 hover:border-[#E59A38]/50 group">
                 <Star size={20} className="mx-auto text-amber-300 mb-1 group-hover:scale-110 transition-transform fill-amber-300" />
                 <p className="text-lg sm:text-xl font-black text-white">4.9 / 5</p>
@@ -379,7 +365,7 @@ export default function HomePage() {
               <div className="glass-panel rounded-2xl p-3.5 sm:p-4 text-center hover:bg-white/10 transition-all duration-300 hover:-translate-y-1 hover:border-[#E59A38]/50 group">
                 <Clock size={20} className="mx-auto text-emerald-400 mb-1 group-hover:scale-110 transition-transform" />
                 <p className="text-lg sm:text-xl font-black text-white">15 Min</p>
-                <p className="text-[11px] text-gray-300 font-medium">Instant Owner Connect</p>
+                <p className="text-[11px] text-gray-300 font-medium">Instant Response</p>
               </div>
             </div>
 
