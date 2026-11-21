@@ -57,6 +57,21 @@ export async function fetchProperties(category?: PropertyCategory): Promise<Prop
 }
 
 export async function fetchAllPropertiesForAdmin(): Promise<Property[]> {
+  // 1. Try server API route (service role client bypasses RLS)
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/admin/properties', { cache: 'no-store' });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.properties)) {
+          return json.properties as Property[];
+        }
+      }
+    } catch (e) {
+      console.warn('API admin fetch error, trying client fallback:', e);
+    }
+  }
+
   const supabase = createClient();
 
   if (supabase) {
@@ -231,6 +246,30 @@ export async function updatePropertyStatus(
   id: string,
   status: 'approved' | 'rejected'
 ): Promise<boolean> {
+  // 1. Try server API route (service role client bypasses RLS)
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/admin/properties', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          const current = getStoredProperties();
+          const updated = current.map((p) =>
+            p.id === id || p.property_code === id ? { ...p, status } : p
+          );
+          savePropertiesToStorage(updated);
+          return true;
+        }
+      }
+    } catch (e) {
+      console.warn('API updatePropertyStatus error, trying fallback:', e);
+    }
+  }
+
   const supabase = createClient();
 
   if (supabase) {
@@ -244,7 +283,6 @@ export async function updatePropertyStatus(
       const { error } = await query;
 
       if (!error) {
-        // Also update local
         const current = getStoredProperties();
         const updated = current.map((p) =>
           p.id === id || p.property_code === id ? { ...p, status } : p
@@ -269,6 +307,30 @@ export async function updateProperty(
   id: string,
   updates: Partial<Property>
 ): Promise<boolean> {
+  // 1. Try server API route (service role client bypasses RLS)
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/admin/properties', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, updates }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          const current = getStoredProperties();
+          const updated = current.map((p) =>
+            p.id === id || p.property_code === id ? { ...p, ...updates } : p
+          );
+          savePropertiesToStorage(updated);
+          return true;
+        }
+      }
+    } catch (e) {
+      console.warn('API updateProperty error, trying fallback:', e);
+    }
+  }
+
   const supabase = createClient();
 
   if (supabase) {
@@ -302,6 +364,28 @@ export async function updateProperty(
 }
 
 export async function deleteProperty(id: string): Promise<boolean> {
+  // 1. Primary: Use server API route (service role client bypasses RLS)
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/admin/properties', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          const current = getStoredProperties();
+          const updated = current.filter((p) => p.id !== id && p.property_code !== id);
+          savePropertiesToStorage(updated);
+          return true;
+        }
+      }
+    } catch (e) {
+      console.warn('API deleteProperty error, trying client fallback:', e);
+    }
+  }
+
   const supabase = createClient();
 
   if (supabase) {
@@ -376,9 +460,10 @@ export async function uploadPropertyImages(files: File[]): Promise<string[]> {
   return uploadedUrls;
 }
 
-// Enquiry submission
-export async function submitEnquiry(enquiry: Omit<Enquiry, 'id' | 'created_at' | 'status'>): Promise<{ success: boolean; id?: string }> {
-  const supabase = createClient();
+// Enquiry submission (bypasses RLS via server API route)
+export async function submitEnquiry(
+  enquiry: Omit<Enquiry, 'id' | 'created_at' | 'status'>
+): Promise<{ success: boolean; id?: string }> {
   const newEnquiry: Enquiry = {
     ...enquiry,
     id: 'enq-' + Date.now(),
@@ -386,6 +471,39 @@ export async function submitEnquiry(enquiry: Omit<Enquiry, 'id' | 'created_at' |
     created_at: new Date().toISOString(),
   };
 
+  // 1. Try server API route (service role client bypasses RLS)
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/enquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(enquiry),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.enquiry) {
+          try {
+            const existing = JSON.parse(
+              localStorage.getItem(LOCAL_STORAGE_ENQUIRIES_KEY) || '[]'
+            );
+            localStorage.setItem(
+              LOCAL_STORAGE_ENQUIRIES_KEY,
+              JSON.stringify([json.enquiry, ...existing])
+            );
+          } catch {
+            // ignore
+          }
+          return { success: true, id: json.enquiry.id };
+        }
+      }
+    } catch (e) {
+      console.warn('API enquiry insert error, trying fallback:', e);
+    }
+  }
+
+  // 2. Direct client fallback
+  const supabase = createClient();
   if (supabase) {
     try {
       const { data, error } = await supabase
@@ -417,7 +535,7 @@ export async function submitEnquiry(enquiry: Omit<Enquiry, 'id' | 'created_at' |
     }
   }
 
-  // Store in localStorage
+  // 3. Store in localStorage so enquiry is never lost
   if (typeof window !== 'undefined') {
     try {
       const existing = JSON.parse(localStorage.getItem(LOCAL_STORAGE_ENQUIRIES_KEY) || '[]');
@@ -431,8 +549,33 @@ export async function submitEnquiry(enquiry: Omit<Enquiry, 'id' | 'created_at' |
 }
 
 export async function fetchEnquiries(): Promise<Enquiry[]> {
-  const supabase = createClient();
+  // 1. Try server API route (service role client bypasses RLS)
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/enquiries', { cache: 'no-store' });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.enquiries)) {
+          if (json.enquiries.length > 0) {
+            try {
+              localStorage.setItem(
+                LOCAL_STORAGE_ENQUIRIES_KEY,
+                JSON.stringify(json.enquiries)
+              );
+            } catch {
+              // ignore
+            }
+            return json.enquiries as Enquiry[];
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('API fetchEnquiries error, trying fallback:', e);
+    }
+  }
 
+  // 2. Direct client fallback
+  const supabase = createClient();
   if (supabase) {
     try {
       const { data, error } = await supabase
@@ -440,7 +583,7 @@ export async function fetchEnquiries(): Promise<Enquiry[]> {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         return data as Enquiry[];
       }
     } catch {
@@ -448,18 +591,22 @@ export async function fetchEnquiries(): Promise<Enquiry[]> {
     }
   }
 
+  // 3. Check local storage
   if (typeof window !== 'undefined') {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_ENQUIRIES_KEY);
       if (stored) {
-        return JSON.parse(stored) as Enquiry[];
+        const parsed = JSON.parse(stored) as Enquiry[];
+        if (parsed.length > 0) {
+          return parsed;
+        }
       }
     } catch {
       // ignore
     }
   }
 
-  // Sample initial enquiries for admin preview
+  // 4. Sample initial enquiries for admin preview if completely empty
   return [
     {
       id: 'enq-01',
@@ -500,9 +647,40 @@ export async function fetchEnquiries(): Promise<Enquiry[]> {
   ];
 }
 
-export async function updateEnquiryStatus(id: string, status: 'new' | 'contacted' | 'closed'): Promise<boolean> {
-  const supabase = createClient();
+export async function updateEnquiryStatus(
+  id: string,
+  status: 'new' | 'contacted' | 'closed'
+): Promise<boolean> {
+  // 1. Try server API route
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/enquiries', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          try {
+            const stored: Enquiry[] = JSON.parse(
+              localStorage.getItem(LOCAL_STORAGE_ENQUIRIES_KEY) || '[]'
+            );
+            const updated = stored.map((e) => (e.id === id ? { ...e, status } : e));
+            localStorage.setItem(LOCAL_STORAGE_ENQUIRIES_KEY, JSON.stringify(updated));
+          } catch {
+            // ignore
+          }
+          return true;
+        }
+      }
+    } catch (e) {
+      console.warn('API updateEnquiryStatus error:', e);
+    }
+  }
 
+  // 2. Direct client fallback
+  const supabase = createClient();
   if (supabase) {
     try {
       if (isUuid(id)) {
@@ -516,10 +694,66 @@ export async function updateEnquiryStatus(id: string, status: 'new' | 'contacted
 
   if (typeof window !== 'undefined') {
     try {
-      const stored: Enquiry[] = JSON.parse(localStorage.getItem(LOCAL_STORAGE_ENQUIRIES_KEY) || '[]');
+      const stored: Enquiry[] = JSON.parse(
+        localStorage.getItem(LOCAL_STORAGE_ENQUIRIES_KEY) || '[]'
+      );
       const updated = stored.map((e) => (e.id === id ? { ...e, status } : e));
       localStorage.setItem(LOCAL_STORAGE_ENQUIRIES_KEY, JSON.stringify(updated));
       return true;
+    } catch {
+      // ignore
+    }
+  }
+
+  return true;
+}
+
+export async function deleteEnquiry(id: string): Promise<boolean> {
+  // 1. Try server API route (service role client bypasses RLS)
+  if (typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/enquiries', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          try {
+            const stored: Enquiry[] = JSON.parse(
+              localStorage.getItem(LOCAL_STORAGE_ENQUIRIES_KEY) || '[]'
+            );
+            const updated = stored.filter((e) => e.id !== id);
+            localStorage.setItem(LOCAL_STORAGE_ENQUIRIES_KEY, JSON.stringify(updated));
+          } catch {
+            // ignore
+          }
+          return true;
+        }
+      }
+    } catch (e) {
+      console.warn('API deleteEnquiry error:', e);
+    }
+  }
+
+  // 2. Direct client fallback
+  const supabase = createClient();
+  if (supabase && isUuid(id)) {
+    try {
+      await supabase.from('enquiries').delete().eq('id', id);
+    } catch {
+      // fallback
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    try {
+      const stored: Enquiry[] = JSON.parse(
+        localStorage.getItem(LOCAL_STORAGE_ENQUIRIES_KEY) || '[]'
+      );
+      const updated = stored.filter((e) => e.id !== id);
+      localStorage.setItem(LOCAL_STORAGE_ENQUIRIES_KEY, JSON.stringify(updated));
     } catch {
       // ignore
     }

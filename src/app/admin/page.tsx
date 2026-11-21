@@ -13,6 +13,7 @@ import {
   createProperty,
   fetchEnquiries,
   updateEnquiryStatus,
+  deleteEnquiry,
   getVisitorCount,
   uploadPropertyImages,
 } from '@/lib/propertyStore';
@@ -29,6 +30,7 @@ import {
   Search,
   X,
   Upload,
+  Inbox,
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -139,10 +141,16 @@ export default function AdminPage() {
     );
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, code?: string) => {
     if (confirm('Are you sure you want to delete this property? This cannot be undone.')) {
-      await deleteProperty(id);
-      setProperties((prev) => prev.filter((p) => p.id !== id));
+      const ok = await deleteProperty(id);
+      if (ok) {
+        setProperties((prev) =>
+          prev.filter((p) => p.id !== id && (!code || p.property_code !== code))
+        );
+      } else {
+        alert('Could not delete property. Please try again.');
+      }
     }
   };
 
@@ -151,6 +159,17 @@ export default function AdminPage() {
     setEnquiries((prev) =>
       prev.map((e) => (e.id === enquiryId ? { ...e, status } : e))
     );
+  };
+
+  const handleDeleteEnquiry = async (enquiryId: string) => {
+    if (confirm('Are you sure you want to delete this enquiry?')) {
+      const ok = await deleteEnquiry(enquiryId);
+      if (ok) {
+        setEnquiries((prev) => prev.filter((e) => e.id !== enquiryId));
+      } else {
+        alert('Could not delete enquiry lead.');
+      }
+    }
   };
 
   // Photo handlers for Add Property Modal
@@ -527,6 +546,13 @@ export default function AdminPage() {
                       >
                         <XCircle size={16} />
                       </button>
+                      <button
+                        onClick={() => handleDelete(prop.id, prop.property_code)}
+                        className="py-2.5 px-3 rounded-xl bg-gray-100 hover:bg-rose-50 text-gray-500 hover:text-rose-700 font-bold text-xs transition cursor-pointer"
+                        title="Delete submission permanently"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
                 );
@@ -637,8 +663,8 @@ export default function AdminPage() {
                           <Edit size={14} />
                         </button>
                         <button
-                          onClick={() => handleDelete(prop.id)}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50"
+                          onClick={() => handleDelete(prop.id, prop.property_code)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
                           title="Delete"
                         >
                           <Trash2 size={14} />
@@ -656,91 +682,110 @@ export default function AdminPage() {
       {/* TAB 3: ENQUIRIES & PACKERS/MOVERS LEADS */}
       {activeTab === 'enquiries' && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {enquiries.map((enq) => {
-              const replyWhatsapp = getWhatsAppLink(
-                `Hi ${enq.name}, Rent With You received your enquiry regarding: ${enq.interest || enq.enquiry_type}. How can we assist you today?`
-              );
-              return (
-                <div
-                  key={enq.id}
-                  className="bg-white rounded-3xl border border-gray-200 p-6 shadow-xs space-y-3 flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-800">
-                        {enq.enquiry_type.replace('_', ' ')}
-                      </span>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          enq.status === 'closed'
-                            ? 'bg-gray-100 text-gray-600'
-                            : enq.status === 'contacted'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-emerald-100 text-emerald-800'
-                        }`}
-                      >
-                        {enq.status}
-                      </span>
-                    </div>
-
-                    <h3 className="text-base font-extrabold text-[#1B2A4A] mt-2">
-                      {enq.name}
-                    </h3>
-                    <p className="text-xs text-gray-500">{enq.phone}</p>
-                    {enq.email && <p className="text-xs text-gray-500">{enq.email}</p>}
-
-                    {/* Specific details */}
-                    {enq.pickup_location && (
-                      <div className="mt-2 text-xs text-gray-700 bg-[#FAF8F5] p-2.5 rounded-xl border border-gray-200/60">
-                        <div><b>Pickup:</b> {enq.pickup_location}</div>
-                        <div><b>Drop:</b> {enq.drop_location}</div>
-                        {enq.household_size && <div><b>Size:</b> {enq.household_size}</div>}
-                        {enq.move_date && <div><b>Date:</b> {enq.move_date}</div>}
+          {enquiries.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-gray-200 p-12 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-[#FAF8F5] text-gray-400 flex items-center justify-center mx-auto mb-3">
+                <Inbox size={24} />
+              </div>
+              <h3 className="text-base font-extrabold text-[#1B2A4A]">No Enquiries Yet</h3>
+              <p className="text-xs text-gray-500 mt-1 max-w-md mx-auto">
+                Customer enquiries and leads submitted via Contact, Furniture Rental, and Packers &amp; Movers will appear here in real-time.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {enquiries.map((enq) => {
+                const replyWhatsapp = getWhatsAppLink(
+                  `Hi ${enq.name}, Rent With You received your enquiry regarding: ${enq.interest || enq.enquiry_type}. How can we assist you today?`
+                );
+                return (
+                  <div
+                    key={enq.id}
+                    className="bg-white rounded-3xl border border-gray-200 p-6 shadow-xs space-y-3 flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-800">
+                          {enq.enquiry_type.replace('_', ' ')}
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            enq.status === 'closed'
+                              ? 'bg-gray-100 text-gray-600'
+                              : enq.status === 'contacted'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-emerald-100 text-emerald-800'
+                          }`}
+                        >
+                          {enq.status}
+                        </span>
                       </div>
-                    )}
 
-                    <p className="text-xs text-gray-600 mt-2 bg-gray-50 p-2.5 rounded-xl">
-                      {enq.message}
-                    </p>
-                  </div>
+                      <h3 className="text-base font-extrabold text-[#1B2A4A] mt-2">
+                        {enq.name}
+                      </h3>
+                      <p className="text-xs text-gray-500">{enq.phone}</p>
+                      {enq.email && <p className="text-xs text-gray-500">{enq.email}</p>}
 
-                  <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
-                    <select
-                      value={enq.status}
-                      onChange={(e) =>
-                        handleUpdateStatus(enq.id!, e.target.value as 'new' | 'contacted' | 'closed')
-                      }
-                      className="text-[11px] font-bold rounded-lg border border-gray-200 px-2 py-1.5 bg-white"
-                    >
-                      <option value="new">New</option>
-                      <option value="contacted">Contacted</option>
-                      <option value="closed">Closed</option>
-                    </select>
+                      {/* Specific details */}
+                      {enq.pickup_location && (
+                        <div className="mt-2 text-xs text-gray-700 bg-[#FAF8F5] p-2.5 rounded-xl border border-gray-200/60">
+                          <div><b>Pickup:</b> {enq.pickup_location}</div>
+                          <div><b>Drop:</b> {enq.drop_location}</div>
+                          {enq.household_size && <div><b>Size:</b> {enq.household_size}</div>}
+                          {enq.move_date && <div><b>Date:</b> {enq.move_date}</div>}
+                        </div>
+                      )}
 
-                    <div className="flex items-center gap-1">
-                      <a
-                        href={`tel:${enq.phone}`}
-                        className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800"
-                        title="Call"
+                      <p className="text-xs text-gray-600 mt-2 bg-gray-50 p-2.5 rounded-xl">
+                        {enq.message}
+                      </p>
+                    </div>
+
+                    <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
+                      <select
+                        value={enq.status}
+                        onChange={(e) =>
+                          handleUpdateStatus(enq.id!, e.target.value as 'new' | 'contacted' | 'closed')
+                        }
+                        className="text-[11px] font-bold rounded-lg border border-gray-200 px-2 py-1.5 bg-white cursor-pointer"
                       >
-                        <Phone size={14} />
-                      </a>
-                      <a
-                        href={replyWhatsapp}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-1.5 rounded-lg bg-[#1F8A5B] text-white text-xs font-bold hover:bg-[#186f49] flex items-center gap-1"
-                      >
-                        <MessageCircle size={14} />
-                        <span>Reply</span>
-                      </a>
+                        <option value="new">New</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="closed">Closed</option>
+                      </select>
+
+                      <div className="flex items-center gap-1">
+                        <a
+                          href={`tel:${enq.phone}`}
+                          className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800"
+                          title="Call"
+                        >
+                          <Phone size={14} />
+                        </a>
+                        <a
+                          href={replyWhatsapp}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 rounded-lg bg-[#1F8A5B] text-white text-xs font-bold hover:bg-[#186f49] flex items-center gap-1"
+                        >
+                          <MessageCircle size={14} />
+                          <span>Reply</span>
+                        </a>
+                        <button
+                          onClick={() => handleDeleteEnquiry(enq.id!)}
+                          className="p-2 rounded-lg bg-gray-100 hover:bg-rose-50 text-gray-400 hover:text-rose-600 transition cursor-pointer"
+                          title="Delete enquiry lead"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
