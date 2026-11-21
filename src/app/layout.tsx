@@ -1,9 +1,24 @@
 import type { Metadata } from 'next';
+import { Plus_Jakarta_Sans, Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { WishlistProvider } from '@/context/WishlistContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-heading',
+  display: 'swap',
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Rent With You | Rent, Buy & Move - Real Estate in Gurgaon & NCR',
@@ -28,8 +43,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased scroll-smooth">
-      <body className="min-h-full flex flex-col bg-white text-gray-900 selection:bg-[#E59A38] selection:text-white overflow-x-clip">
+    <html
+      lang="en"
+      className={`h-full antialiased scroll-smooth ${plusJakartaSans.variable} ${inter.variable}`}
+    >
+      <body className="min-h-full flex flex-col bg-white text-gray-900 font-sans selection:bg-[#E59A38] selection:text-white overflow-x-clip">
         <AuthProvider>
           <WishlistProvider>
             <Header />

@@ -8,6 +8,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-sans)', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        heading: ['var(--font-heading)', 'Plus Jakarta Sans', 'sans-serif'],
+      },
       colors: {
         'primary-dark': '#1B2A4A',
         'primary-navy': '#1E2E48',

@@ -103,7 +103,7 @@ export default function Logo({
         x="168"
         y="114"
         fill={subtitleColor}
-        fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        fontFamily="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
         fontSize="12"
         fontWeight="600"
         letterSpacing="0.36em"
