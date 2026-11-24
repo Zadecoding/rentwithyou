@@ -70,19 +70,42 @@ export default function AdminPage() {
   const editFileInputRef = useRef<HTMLInputElement>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // Reset Add Property Form Fields completely
+  const resetAddForm = () => {
+    setNewTitle('');
+    setNewCategory('rent');
+    setNewType('Apartment');
+    setNewBedrooms('2 BHK');
+    setNewFurnishing('Semi-furnished');
+    setNewPrice('');
+    setNewArea('');
+    setNewBadge('Verified');
+    setNewDescription('');
+    setNewImageFiles([]);
+    setNewImagePreviews([]);
+    if (addFileInputRef.current) {
+      addFileInputRef.current.value = '';
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
-      const [allProps, allEnqs, count] = await Promise.all([
+      // Parallelize properties and enquiries fetching for maximum speed
+      const [allProps, allEnqs] = await Promise.all([
         fetchAllPropertiesForAdmin(),
         fetchEnquiries(),
-        getVisitorCount(),
       ]);
       if (isMounted) {
         setProperties(allProps);
         setEnquiries(allEnqs);
-        setVisitorCount(count);
       }
+      // Load visitor count asynchronously in the background so it never holds up UI loading
+      getVisitorCount().then((count) => {
+        if (isMounted && typeof count === 'number') {
+          setVisitorCount(count);
+        }
+      });
     };
     void load();
     return () => {
@@ -263,11 +286,7 @@ export default function AdminPage() {
       if (res.success && res.data) {
         setProperties((prev) => [res.data!, ...prev]);
         setIsAddModalOpen(false);
-        setNewTitle('');
-        setNewPrice('');
-        setNewArea('');
-        setNewImageFiles([]);
-        setNewImagePreviews([]);
+        resetAddForm();
       }
     } catch (err) {
       console.error(err);
@@ -339,8 +358,11 @@ export default function AdminPage() {
         </div>
 
         <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1B2A4A] hover:bg-[#142038] text-white font-bold text-xs shadow-md transition"
+          onClick={() => {
+            resetAddForm();
+            setIsAddModalOpen(true);
+          }}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1B2A4A] hover:bg-[#142038] text-white font-bold text-xs shadow-md transition cursor-pointer"
         >
           <Plus size={16} className="text-[#E59A38]" />
           <span>Add Property Directly</span>
@@ -794,8 +816,11 @@ export default function AdminPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
           <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 sm:p-8 my-8 max-h-[90vh] overflow-y-auto">
             <button
-              onClick={() => setIsAddModalOpen(false)}
-              className="absolute top-6 right-6 text-gray-400 hover:text-gray-800"
+              onClick={() => {
+                setIsAddModalOpen(false);
+                resetAddForm();
+              }}
+              className="absolute top-6 right-6 text-gray-400 hover:text-gray-800 cursor-pointer"
             >
               <X size={20} />
             </button>
@@ -1001,11 +1026,21 @@ export default function AdminPage() {
                 )}
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddModalOpen(false);
+                    resetAddForm();
+                  }}
+                  className="w-1/3 py-3 rounded-xl border border-gray-300 hover:bg-gray-100 text-gray-700 font-bold text-xs cursor-pointer transition"
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
                   disabled={isCreating}
-                  className="w-full py-3 rounded-xl bg-[#1B2A4A] hover:bg-[#142038] text-white font-bold text-xs"
+                  className="flex-1 py-3 rounded-xl bg-[#1B2A4A] hover:bg-[#142038] text-white font-bold text-xs cursor-pointer transition shadow-md"
                 >
                   {isCreating ? 'Publishing...' : 'Publish Property Live'}
                 </button>

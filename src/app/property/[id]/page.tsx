@@ -5,7 +5,12 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Property } from '@/types';
-import { fetchPropertyById, fetchProperties } from '@/lib/propertyStore';
+import {
+  fetchPropertyById,
+  fetchProperties,
+  getCachedPropertySync,
+  getCachedPropertiesSync,
+} from '@/lib/propertyStore';
 import { BRAND, getWhatsAppLink } from '@/lib/constants';
 import { useWishlist } from '@/context/WishlistContext';
 import PropertyCard from '@/components/PropertyCard';
@@ -27,9 +32,15 @@ export default function PropertyDetailPage() {
 
   const { isWishlisted, toggleWishlist } = useWishlist();
 
-  const [property, setProperty] = useState<Property | null>(null);
-  const [similarProperties, setSimilarProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [property, setProperty] = useState<Property | null>(() => getCachedPropertySync(id));
+  const [similarProperties, setSimilarProperties] = useState<Property[]>(() => {
+    const cached = getCachedPropertySync(id);
+    if (cached) {
+      return getCachedPropertiesSync(cached.category).filter((p) => p.id !== cached.id).slice(0, 3);
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState<boolean>(() => !getCachedPropertySync(id));
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
@@ -37,7 +48,10 @@ export default function PropertyDetailPage() {
   useEffect(() => {
     async function load() {
       if (!id) return;
-      setLoading(true);
+      // Only show spinner if there is no cached property to display
+      if (!getCachedPropertySync(id)) {
+        setLoading(true);
+      }
       const prop = await fetchPropertyById(id);
       if (prop) {
         setProperty(prop);

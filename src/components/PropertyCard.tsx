@@ -36,10 +36,15 @@ export default function PropertyCard({ property }: PropertyCardProps) {
     }
   };
 
-  const imageSrc =
+  const rawImageSrc =
     property.images && property.images.length > 0
       ? property.images[0]
-      : 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&auto=format&fit=crop&q=80';
+      : 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&auto=format&fit=crop&q=75';
+
+  // Optimize Unsplash thumbnail URLs to reduce download payload by ~60%
+  const imageSrc = rawImageSrc.includes('images.unsplash.com')
+    ? rawImageSrc.replace(/w=\d+/, 'w=600').replace(/q=\d+/, 'q=75')
+    : rawImageSrc;
 
   const isBuyOrProject = property.category === 'buy';
   const ctaText = isBuyOrProject ? 'Details' : 'View';
@@ -66,6 +71,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             src={imageSrc}
             alt={property.title}
             fill
+            loading="lazy"
             unoptimized
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             className="object-cover group-hover:scale-105 transition-transform duration-500"

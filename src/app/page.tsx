@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { fetchProperties } from '@/lib/propertyStore';
+import { fetchProperties, getCachedPropertiesSync } from '@/lib/propertyStore';
 import { Property, PropertyCategory } from '@/types';
 import PropertyCard from '@/components/PropertyCard';
 import PackersMoversModal from '@/components/PackersMoversModal';
@@ -65,17 +65,24 @@ export default function HomePage() {
   const [isPackersModalOpen, setIsPackersModalOpen] = useState(false);
   const [isFurnitureModalOpen, setIsFurnitureModalOpen] = useState(false);
 
-  // Properties state
-  const [rentalProperties, setRentalProperties] = useState<Property[]>([]);
-  const [buyProperties, setBuyProperties] = useState<Property[]>([]);
+  // Properties state initialized synchronously from memory/localStorage for 0ms initial load
+  const [rentalProperties, setRentalProperties] = useState<Property[]>(() =>
+    getCachedPropertiesSync('rent')
+  );
+  const [buyProperties, setBuyProperties] = useState<Property[]>(() =>
+    getCachedPropertiesSync('buy')
+  );
   const [rentalPage, setRentalPage] = useState(1);
   const [buyPage, setBuyPage] = useState(1);
   const [rentalBudgetFilter, setRentalBudgetFilter] = useState<number | null>(null);
 
   useEffect(() => {
     async function loadData() {
-      const rents = await fetchProperties('rent');
-      const buys = await fetchProperties('buy');
+      // Parallelize fetches in a single batch
+      const [rents, buys] = await Promise.all([
+        fetchProperties('rent'),
+        fetchProperties('buy'),
+      ]);
       setRentalProperties(rents);
       setBuyProperties(buys);
     }

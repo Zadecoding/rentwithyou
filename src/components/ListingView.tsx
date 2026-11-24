@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Property, PropertyCategory } from '@/types';
-import { fetchProperties } from '@/lib/propertyStore';
+import { fetchProperties, getCachedPropertiesSync } from '@/lib/propertyStore';
 import PropertyCard from '@/components/PropertyCard';
 import { Filter, RotateCcw, Search, SlidersHorizontal } from 'lucide-react';
 
@@ -16,8 +16,12 @@ interface ListingViewProps {
 function ListingViewInner({ category, pageTitle, pageSubtitle }: ListingViewProps) {
   const searchParams = useSearchParams();
 
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [properties, setProperties] = useState<Property[]>(() =>
+    getCachedPropertiesSync(category)
+  );
+  const [loading, setLoading] = useState<boolean>(() => {
+    return getCachedPropertiesSync(category).length === 0;
+  });
 
   // Filter states initialized from searchParams
   const [location, setLocation] = useState(searchParams.get('location') || searchParams.get('city') || 'All areas');
@@ -35,7 +39,10 @@ function ListingViewInner({ category, pageTitle, pageSubtitle }: ListingViewProp
   useEffect(() => {
     let isMounted = true;
     async function load() {
-      setLoading(true);
+      // Only show spinner if there is no cached data to display
+      if (getCachedPropertiesSync(category).length === 0) {
+        setLoading(true);
+      }
       const data = await fetchProperties(category);
       if (isMounted) {
         setProperties(data);

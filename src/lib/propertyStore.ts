@@ -5,6 +5,86 @@ import { BRAND } from './constants';
 const LOCAL_STORAGE_PROPERTIES_KEY = 'rw_custom_properties';
 const LOCAL_STORAGE_ENQUIRIES_KEY = 'rw_custom_enquiries';
 const LOCAL_STORAGE_VISITOR_KEY = 'rw_visitor_count';
+const CACHE_APPROVED_KEY = 'rw_cached_approved_properties';
+const CACHE_EXPIRY_MS = 60 * 1000; // 60 seconds fresh TTL
+
+// In-memory cache for 0ms instantaneous route transitions
+interface MemoryCache {
+  approvedProperties: Property[] | null;
+  lastFetched: number;
+  inFlightFetch: Promise<Property[]> | null;
+}
+
+const memoryCache: MemoryCache = {
+  approvedProperties: null,
+  lastFetched: 0,
+  inFlightFetch: null,
+};
+
+// Synchronously get cached approved properties for zero-delay instant rendering
+export function getCachedPropertiesSync(category?: PropertyCategory): Property[] {
+  let list: Property[] = [];
+  if (memoryCache.approvedProperties && memoryCache.approvedProperties.length > 0) {
+    list = memoryCache.approvedProperties;
+  } else if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(CACHE_APPROVED_KEY);
+      if (stored) {
+        list = JSON.parse(stored) as Property[];
+        memoryCache.approvedProperties = list;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (list.length === 0) {
+    const stored = getStoredProperties();
+    list = stored.filter((p) => p.status === 'approved');
+  }
+
+  if (category) {
+    return list.filter((p) => p.category === category);
+  }
+  return list;
+}
+
+// Synchronously get single property for instant detail page loading
+export function getCachedPropertySync(id: string): Property | null {
+  const cleanId = decodeURIComponent(id || '').trim();
+  if (!cleanId) return null;
+
+  const all = getCachedPropertiesSync();
+  const found = all.find(
+    (p) =>
+      p.id === cleanId ||
+      p.property_code === cleanId ||
+      p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') === cleanId
+  );
+  if (found) return found;
+
+  const stored = getStoredProperties();
+  return (
+    stored.find(
+      (p) =>
+        p.id === cleanId ||
+        p.property_code === cleanId ||
+        p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') === cleanId
+    ) || null
+  );
+}
+
+function updateApprovedCache(properties: Property[]) {
+  memoryCache.approvedProperties = properties;
+  memoryCache.lastFetched = Date.now();
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(CACHE_APPROVED_KEY, JSON.stringify(properties));
+    } catch {
+      // ignore
+    }
+  }
+}
 
 // Helper to get local custom properties
 function getStoredProperties(): Property[] {
@@ -28,32 +108,71 @@ function savePropertiesToStorage(props: Property[]) {
 }
 
 export async function fetchProperties(category?: PropertyCategory): Promise<Property[]> {
-  const supabase = createClient();
+  const now = Date.now();
+  const cachedList = getCachedPropertiesSync();
 
-  if (supabase) {
+  // If cache is fresh (< 60s) and has data, return immediately (0ms!)
+  const isFresh = memoryCache.approvedProperties && now - memoryCache.lastFetched < CACHE_EXPIRY_MS;
+  if (isFresh && cachedList.length > 0) {
+    return category ? cachedList.filter((p) => p.category === category) : cachedList;
+  }
+
+  // If there is already an in-flight fetch for approved properties, reuse it to prevent duplicate network calls
+  if (memoryCache.inFlightFetch) {
     try {
-      let query = supabase.from('properties').select('*').eq('status', 'approved');
-      if (category) {
-        query = query.eq('category', category);
-      }
-      query = query.order('created_at', { ascending: false });
-
-      const { data, error } = await query;
-      if (!error && data) {
-        return data as Property[];
-      }
-    } catch (e) {
-      console.warn('Supabase fetch failed:', e);
+      const data = await memoryCache.inFlightFetch;
+      return category ? data.filter((p) => p.category === category) : data;
+    } catch {
+      // fallback
     }
   }
 
-  // Fallback to local stored properties only (no dummy properties)
-  const all = getStoredProperties();
-  const approved = all.filter((p) => p.status === 'approved');
-  if (category) {
-    return approved.filter((p) => p.category === category);
+  // Single unified fetch for all approved properties
+  const fetchPromise = (async () => {
+    const supabase = createClient();
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          const props = data as Property[];
+          updateApprovedCache(props);
+          return props;
+        }
+      } catch (e) {
+        console.warn('Supabase fetch failed:', e);
+      }
+    }
+
+    const stored = getStoredProperties().filter((p) => p.status === 'approved');
+    if (stored.length > 0) {
+      updateApprovedCache(stored);
+      return stored;
+    }
+
+    return cachedList;
+  })();
+
+  memoryCache.inFlightFetch = fetchPromise;
+
+  // Stale-While-Revalidate: If we have cached properties, return them immediately so UI is 0ms instant!
+  if (cachedList.length > 0) {
+    fetchPromise.finally(() => {
+      memoryCache.inFlightFetch = null;
+    });
+    return category ? cachedList.filter((p) => p.category === category) : cachedList;
   }
-  return approved;
+
+  try {
+    const fresh = await fetchPromise;
+    return category ? fresh.filter((p) => p.category === category) : fresh;
+  } finally {
+    memoryCache.inFlightFetch = null;
+  }
 }
 
 export async function fetchAllPropertiesForAdmin(): Promise<Property[]> {
@@ -138,9 +257,17 @@ const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4
 
 export async function fetchPropertyById(id: string): Promise<Property | null> {
   const cleanId = decodeURIComponent(id || '').trim();
-  const supabase = createClient();
+  if (!cleanId) return null;
 
-  if (supabase && cleanId) {
+  // 1. Instant sync check from memory or local cache (0ms)
+  const cached = getCachedPropertySync(cleanId);
+  if (cached) {
+    return cached;
+  }
+
+  // 2. Fetch from Supabase if not found in cache
+  const supabase = createClient();
+  if (supabase) {
     try {
       let query = supabase.from('properties').select('*');
       if (isUuid(cleanId)) {
@@ -151,7 +278,12 @@ export async function fetchPropertyById(id: string): Promise<Property | null> {
       const { data, error } = await query.maybeSingle();
 
       if (!error && data) {
-        return data as Property;
+        const prop = data as Property;
+        const currentCached = getCachedPropertiesSync();
+        if (!currentCached.some((p) => p.id === prop.id)) {
+          updateApprovedCache([prop, ...currentCached]);
+        }
+        return prop;
       }
     } catch {
       // fallback
@@ -225,9 +357,14 @@ export async function createProperty(
         .single();
 
       if (!error && data) {
+        const prop = data as Property;
         // Also save to local storage for immediate UI reflect
-        savePropertiesToStorage([data as Property, ...current]);
-        return { success: true, data: data as Property };
+        savePropertiesToStorage([prop, ...current]);
+        if (prop.status === 'approved') {
+          const cached = getCachedPropertiesSync();
+          updateApprovedCache([prop, ...cached.filter((p) => p.id !== prop.id)]);
+        }
+        return { success: true, data: prop };
       } else if (error) {
         console.warn('Supabase property insert error:', error);
       }
@@ -239,13 +376,52 @@ export async function createProperty(
   // Save locally
   const updated = [newProperty, ...current];
   savePropertiesToStorage(updated);
+  if (newProperty.status === 'approved') {
+    const cached = getCachedPropertiesSync();
+    updateApprovedCache([newProperty, ...cached.filter((p) => p.id !== newProperty.id)]);
+  }
   return { success: true, data: newProperty };
+}
+
+function syncStatusToCache(id: string, status: 'approved' | 'rejected') {
+  const cached = getCachedPropertiesSync();
+  if (status === 'approved') {
+    const exists = cached.find((p) => p.id === id || p.property_code === id);
+    if (exists) {
+      updateApprovedCache(
+        cached.map((p) => (p.id === id || p.property_code === id ? { ...p, status } : p))
+      );
+    } else {
+      const stored = getStoredProperties().find((p) => p.id === id || p.property_code === id);
+      if (stored) {
+        updateApprovedCache([{ ...stored, status: 'approved' }, ...cached]);
+      }
+    }
+  } else {
+    updateApprovedCache(cached.filter((p) => p.id !== id && p.property_code !== id));
+  }
+}
+
+function syncUpdatesToCache(id: string, updates: Partial<Property>) {
+  const cached = getCachedPropertiesSync();
+  const updated = cached.map((p) =>
+    p.id === id || p.property_code === id ? { ...p, ...updates } : p
+  );
+  updateApprovedCache(updated);
+}
+
+function syncDeleteToCache(id: string) {
+  const cached = getCachedPropertiesSync();
+  const updated = cached.filter((p) => p.id !== id && p.property_code !== id);
+  updateApprovedCache(updated);
 }
 
 export async function updatePropertyStatus(
   id: string,
   status: 'approved' | 'rejected'
 ): Promise<boolean> {
+  syncStatusToCache(id, status);
+
   // 1. Try server API route (service role client bypasses RLS)
   if (typeof window !== 'undefined') {
     try {
@@ -307,6 +483,8 @@ export async function updateProperty(
   id: string,
   updates: Partial<Property>
 ): Promise<boolean> {
+  syncUpdatesToCache(id, updates);
+
   // 1. Try server API route (service role client bypasses RLS)
   if (typeof window !== 'undefined') {
     try {
@@ -364,6 +542,8 @@ export async function updateProperty(
 }
 
 export async function deleteProperty(id: string): Promise<boolean> {
+  syncDeleteToCache(id);
+
   // 1. Primary: Use server API route (service role client bypasses RLS)
   if (typeof window !== 'undefined') {
     try {
@@ -762,31 +942,47 @@ export async function deleteEnquiry(id: string): Promise<boolean> {
   return true;
 }
 
-// Visitor counter tracking
+// Visitor counter tracking (with timeout protection so it never blocks page loading)
 export async function getVisitorCount(): Promise<number> {
+  const getStoredCount = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        const current = parseInt(
+          localStorage.getItem(LOCAL_STORAGE_VISITOR_KEY) || BRAND.defaultVisitorCount.toString(),
+          10
+        );
+        const updated = current + 1;
+        localStorage.setItem(LOCAL_STORAGE_VISITOR_KEY, updated.toString());
+        return updated;
+      } catch {
+        return BRAND.defaultVisitorCount;
+      }
+    }
+    return BRAND.defaultVisitorCount;
+  };
+
   const supabase = createClient();
 
   if (supabase) {
     try {
-      const { data, error } = await supabase.rpc('increment_visitor_count');
-      if (!error && typeof data === 'number') {
-        return data;
-      }
+      // Race Supabase RPC against a 500ms timeout so high network latency never delays page load
+      const rpcPromise = supabase.rpc('increment_visitor_count').then(({ data, error }) => {
+        if (!error && typeof data === 'number') {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(LOCAL_STORAGE_VISITOR_KEY, data.toString());
+          }
+          return data;
+        }
+        return null;
+      });
+
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 500));
+      const result = await Promise.race([rpcPromise, timeoutPromise]);
+      if (result !== null) return result;
     } catch {
       // fallback
     }
   }
 
-  if (typeof window !== 'undefined') {
-    try {
-      const current = parseInt(localStorage.getItem(LOCAL_STORAGE_VISITOR_KEY) || BRAND.defaultVisitorCount.toString(), 10);
-      const updated = current + 1;
-      localStorage.setItem(LOCAL_STORAGE_VISITOR_KEY, updated.toString());
-      return updated;
-    } catch {
-      return BRAND.defaultVisitorCount;
-    }
-  }
-
-  return BRAND.defaultVisitorCount;
+  return getStoredCount();
 }
