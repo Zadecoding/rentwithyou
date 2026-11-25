@@ -1,21 +1,23 @@
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans, Inter } from 'next/font/google';
+import { Playfair_Display, Manrope } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { WishlistProvider } from '@/context/WishlistContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import MobileStickyBar from '@/components/MobileStickyBar';
 
-const plusJakartaSans = Plus_Jakarta_Sans({
+const playfairDisplay = Playfair_Display({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+  weight: ['500', '600', '700', '800'],
+  style: ['normal', 'italic'],
   variable: '--font-heading',
   display: 'swap',
 });
 
-const inter = Inter({
+const manrope = Manrope({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
+  weight: ['400', '500', '600', '700', '800'],
   variable: '--font-sans',
   display: 'swap',
 });
@@ -45,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`h-full antialiased scroll-smooth ${plusJakartaSans.variable} ${inter.variable}`}
+      className={`h-full antialiased scroll-smooth ${playfairDisplay.variable} ${manrope.variable}`}
     >
       <body className="min-h-full flex flex-col bg-white text-gray-900 font-sans selection:bg-[#E59A38] selection:text-white overflow-x-clip">
         <AuthProvider>
@@ -53,6 +55,7 @@ export default function RootLayout({
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
+            <MobileStickyBar />
           </WishlistProvider>
         </AuthProvider>
       </body>

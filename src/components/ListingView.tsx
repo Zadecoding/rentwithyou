@@ -123,10 +123,10 @@ function ListingViewInner({ category, pageTitle, pageSubtitle }: ListingViewProp
   }, [properties, location, propertyType, bedrooms, furnishing, priceMax, sortBy]);
 
   const priceLabel = category === 'rent'
-    ? `Up to Rs. ${priceMax.toLocaleString('en-IN')} / mo`
+    ? `Up to ₹${priceMax.toLocaleString('en-IN')} / mo`
     : category === 'buy'
-    ? `Up to Rs. ${(priceMax / 100000).toFixed(0)} Lakh`
-    : `Up to Rs. ${priceMax.toLocaleString('en-IN')}`;
+    ? `Up to ₹${(priceMax / 100000).toFixed(0)} Lakh`
+    : `Up to ₹${priceMax.toLocaleString('en-IN')}`;
 
   return (
     <div className="w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 2xl:px-16 py-8">
@@ -270,7 +270,7 @@ function ListingViewInner({ category, pageTitle, pageSubtitle }: ListingViewProp
               <div className="flex justify-between text-[10px] text-gray-500 mt-1">
                 <span>Min</span>
                 <span>
-                  {category === 'rent' ? 'Rs. 1 Lakh' : category === 'buy' ? 'Rs. 3 Cr' : 'Rs. 5 Lakh'}
+                  {category === 'rent' ? '₹1 Lakh' : category === 'buy' ? '₹3 Cr' : '₹5 Lakh'}
                 </span>
               </div>
             </div>

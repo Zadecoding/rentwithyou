@@ -7,7 +7,7 @@ import Logo from '@/components/Logo';
 import { useAuth } from '@/context/AuthContext';
 import { createProperty, uploadPropertyImages } from '@/lib/propertyStore';
 import { PropertyCategory, ListedByRole, PropertyType, Property } from '@/types';
-import { BRAND, getWhatsAppLink } from '@/lib/constants';
+import { BRAND, getWhatsAppLink, attachPropertySpecs } from '@/lib/constants';
 import {
   Upload,
   CheckCircle2,
@@ -52,6 +52,8 @@ export default function ListYourPropertyPage() {
   const [bedrooms, setBedrooms] = useState('2 BHK');
   const [furnishing, setFurnishing] = useState('Semi-furnished');
   const [carpetArea, setCarpetArea] = useState('');
+  const [floor, setFloor] = useState('');
+  const [deposit, setDeposit] = useState('');
   const [locationArea, setLocationArea] = useState('');
   const [city, setCity] = useState('Gurgaon');
   const [landmark, setLandmark] = useState('');
@@ -198,11 +200,11 @@ export default function ListYourPropertyPage() {
 
       const numericPrice = Number(price.replace(/[^0-9]/g, '')) || 25000;
       const priceLabel =
-        category === 'rent'
-          ? `Rs. ${numericPrice.toLocaleString('en-IN')} / month`
+        category === 'rent' || category === 'commercial'
+          ? `₹${numericPrice.toLocaleString('en-IN')} / month`
           : numericPrice >= 10000000
-          ? `Rs. ${(numericPrice / 10000000).toFixed(2)} Cr onwards`
-          : `Rs. ${(numericPrice / 100000).toFixed(0)} Lakh onwards`;
+          ? `₹${(numericPrice / 10000000).toFixed(2).replace(/\.00$/, '')} Cr onwards`
+          : `₹${(numericPrice / 100000).toFixed(0)} Lakh onwards`;
 
       // Auto-generated Title if left blank
       let autoTitle = title.trim();
@@ -228,6 +230,19 @@ export default function ListYourPropertyPage() {
         }
       }
 
+      const formattedSqft = carpetArea.trim()
+        ? carpetArea.toLowerCase().includes('sq')
+          ? carpetArea.trim()
+          : `${carpetArea.trim()} sq ft`
+        : undefined;
+
+      const descriptionWithSpecs = attachPropertySpecs(autoDesc, {
+        area_sqft: formattedSqft,
+        floor: floor.trim() || undefined,
+        deposit: deposit.trim() || undefined,
+        no_brokerage: role === 'Owner',
+      });
+
       // 2. Insert into properties with status = 'pending'
       const result = await createProperty({
         title: autoTitle,
@@ -242,7 +257,7 @@ export default function ListYourPropertyPage() {
         city: city || 'Gurgaon',
         landmark: landmark.trim() || undefined,
         available_from: availableFrom.trim() || 'Immediate',
-        description: autoDesc,
+        description: descriptionWithSpecs,
         images: uploadedUrls,
         badge: 'New',
         listed_by_role: role,
@@ -269,10 +284,10 @@ export default function ListYourPropertyPage() {
   // Live Card Preview Data
   const previewNumericPrice = Number(price.replace(/[^0-9]/g, '')) || (category === 'rent' ? 25000 : 7500000);
   const previewPriceLabel = useMemo(() => {
-    if (!price) return category === 'rent' ? 'Rs. 25,000 / month' : 'Rs. 75 Lakh';
-    if (category === 'rent') return `Rs. ${previewNumericPrice.toLocaleString('en-IN')} / month`;
-    if (previewNumericPrice >= 10000000) return `Rs. ${(previewNumericPrice / 10000000).toFixed(2)} Cr`;
-    return `Rs. ${(previewNumericPrice / 100000).toFixed(0)} Lakh`;
+    if (!price) return category === 'rent' ? '₹25,000 / month' : '₹75 Lakh';
+    if (category === 'rent') return `₹${previewNumericPrice.toLocaleString('en-IN')} / month`;
+    if (previewNumericPrice >= 10000000) return `₹${(previewNumericPrice / 10000000).toFixed(2)} Cr`;
+    return `₹${(previewNumericPrice / 100000).toFixed(0)} Lakh`;
   }, [price, category, previewNumericPrice]);
 
   const previewCoverImage =
@@ -802,7 +817,7 @@ export default function ListYourPropertyPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1">
-                        Expected {category === 'rent' ? 'Monthly Rent' : 'Price'} (Rs.) *
+                        Expected {category === 'rent' ? 'Monthly Rent' : 'Price'} (₹) *
                       </label>
                       <input
                         type="text"
@@ -830,6 +845,47 @@ export default function ListYourPropertyPage() {
                         value={landmark}
                         onChange={(e) => setLandmark(e.target.value)}
                         placeholder="e.g. Near Metro Station / Hong Kong Bazaar"
+                        className="w-full text-xs font-medium px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E59A38]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">
+                        Size (sq ft) (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={carpetArea}
+                        onChange={(e) => setCarpetArea(e.target.value)}
+                        placeholder="e.g. 1,150 sq ft"
+                        className="w-full text-xs font-medium px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E59A38]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">
+                        Floor (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={floor}
+                        onChange={(e) => setFloor(e.target.value)}
+                        placeholder="e.g. 4th floor"
+                        className="w-full text-xs font-medium px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E59A38]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">
+                        Security Deposit (₹) (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={deposit}
+                        onChange={(e) => setDeposit(e.target.value)}
+                        placeholder="e.g. 50,000"
                         className="w-full text-xs font-medium px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E59A38]"
                       />
                     </div>

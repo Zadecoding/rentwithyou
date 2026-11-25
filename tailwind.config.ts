@@ -9,8 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-sans)', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        heading: ['var(--font-heading)', 'Plus Jakarta Sans', 'sans-serif'],
+        sans: ['var(--font-sans)', 'Manrope', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        heading: ['var(--font-heading)', 'Playfair Display', 'Georgia', 'serif'],
       },
       colors: {
         'primary-dark': '#1B2A4A',

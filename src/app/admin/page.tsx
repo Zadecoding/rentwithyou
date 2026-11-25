@@ -4,7 +4,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
-import { BRAND, getWhatsAppLink } from '@/lib/constants';
+import {
+  BRAND,
+  getWhatsAppLink,
+  attachPropertySpecs,
+  parsePropertySpecs,
+  formatRupeeLabel,
+} from '@/lib/constants';
 import {
   fetchAllPropertiesForAdmin,
   updatePropertyStatus,
@@ -58,6 +64,10 @@ export default function AdminPage() {
   const [newOwnerPhone] = useState(BRAND.phone);
   const [newBadge, setNewBadge] = useState<PropertyBadge>('Verified');
   const [newDescription, setNewDescription] = useState('');
+  const [newAreaSqft, setNewAreaSqft] = useState('');
+  const [newFloor, setNewFloor] = useState('');
+  const [newDeposit, setNewDeposit] = useState('');
+  const [newNoBrokerage, setNewNoBrokerage] = useState(true);
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
   const addFileInputRef = useRef<HTMLInputElement>(null);
@@ -65,6 +75,10 @@ export default function AdminPage() {
 
   // Edit Property Modal State
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [editAreaSqft, setEditAreaSqft] = useState('');
+  const [editFloor, setEditFloor] = useState('');
+  const [editDeposit, setEditDeposit] = useState('');
+  const [editNoBrokerage, setEditNoBrokerage] = useState(false);
   const [editImageFiles, setEditImageFiles] = useState<File[]>([]);
   const [editImagePreviews, setEditImagePreviews] = useState<string[]>([]);
   const editFileInputRef = useRef<HTMLInputElement>(null);
@@ -81,6 +95,10 @@ export default function AdminPage() {
     setNewArea('');
     setNewBadge('Verified');
     setNewDescription('');
+    setNewAreaSqft('');
+    setNewFloor('');
+    setNewDeposit('');
+    setNewNoBrokerage(true);
     setNewImageFiles([]);
     setNewImagePreviews([]);
     if (addFileInputRef.current) {
@@ -212,7 +230,16 @@ export default function AdminPage() {
 
   // Photo handlers for Edit Property Modal
   const openEditModal = (prop: Property) => {
-    setEditingProperty({ ...prop, images: prop.images || [] });
+    const specs = parsePropertySpecs(prop);
+    setEditingProperty({
+      ...prop,
+      description: specs.cleanDescription,
+      images: prop.images || [],
+    });
+    setEditAreaSqft(specs.area_sqft || '');
+    setEditFloor(specs.floor || '');
+    setEditDeposit(specs.deposit || '');
+    setEditNoBrokerage(Boolean(specs.no_brokerage));
     setEditImageFiles([]);
     setEditImagePreviews([]);
   };
@@ -255,11 +282,20 @@ export default function AdminPage() {
 
       const numericPrice = Number(newPrice.replace(/[^0-9]/g, '')) || 25000;
       const priceLabel =
-        newCategory === 'rent'
-          ? `Rs. ${numericPrice.toLocaleString('en-IN')} / month`
+        newCategory === 'rent' || newCategory === 'commercial'
+          ? `₹${numericPrice.toLocaleString('en-IN')} / month`
           : numericPrice >= 10000000
-          ? `Rs. ${(numericPrice / 10000000).toFixed(2)} Cr onwards`
-          : `Rs. ${(numericPrice / 100000).toFixed(0)} Lakh onwards`;
+          ? `₹${(numericPrice / 10000000).toFixed(2).replace(/\.00$/, '')} Cr onwards`
+          : `₹${(numericPrice / 100000).toFixed(0)} Lakh onwards`;
+
+      const baseDescription =
+        newDescription || `Premium ${newTitle} located in ${newArea}, Gurgaon.`;
+      const descriptionWithSpecs = attachPropertySpecs(baseDescription, {
+        area_sqft: newAreaSqft,
+        floor: newFloor,
+        deposit: newDeposit,
+        no_brokerage: newNoBrokerage,
+      });
 
       const res = await createProperty({
         title: newTitle,
@@ -273,7 +309,7 @@ export default function AdminPage() {
         area: newArea,
         city: 'Gurgaon',
         available_from: 'Immediate',
-        description: newDescription || `Premium ${newTitle} located in ${newArea}, Gurgaon.`,
+        description: descriptionWithSpecs,
         images: uploadedUrls,
         badge: newBadge,
         listed_by_role: 'Admin',
@@ -308,7 +344,19 @@ export default function AdminPage() {
         finalImages = [...finalImages, ...newlyUploaded];
       }
 
-      const updatedProp = { ...editingProperty, images: finalImages };
+      const descriptionWithSpecs = attachPropertySpecs(editingProperty.description, {
+        area_sqft: editAreaSqft,
+        floor: editFloor,
+        deposit: editDeposit,
+        no_brokerage: editNoBrokerage,
+      });
+
+      const updatedProp = {
+        ...editingProperty,
+        price_label: formatRupeeLabel(editingProperty.price_label),
+        description: descriptionWithSpecs,
+        images: finalImages,
+      };
       await updateProperty(editingProperty.id, updatedProp);
       setProperties((prev) =>
         prev.map((p) => (p.id === editingProperty.id ? updatedProp : p))
@@ -648,7 +696,7 @@ export default function AdminPage() {
                       </td>
                       <td className="py-3.5 px-4 text-gray-600">{prop.area}</td>
                       <td className="py-3.5 px-4 font-bold text-[#1B2A4A]">
-                        {prop.price_label}
+                        {formatRupeeLabel(prop.price_label)}
                       </td>
                       <td className="py-3.5 px-4">
                         {prop.badge ? (
@@ -936,6 +984,49 @@ export default function AdminPage() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Size (sq ft)</label>
+                  <input
+                    type="text"
+                    value={newAreaSqft}
+                    onChange={(e) => setNewAreaSqft(e.target.value)}
+                    placeholder="1,150 sq ft"
+                    className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-gray-300"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Floor</label>
+                  <input
+                    type="text"
+                    value={newFloor}
+                    onChange={(e) => setNewFloor(e.target.value)}
+                    placeholder="4th floor"
+                    className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-gray-300"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Deposit (₹)</label>
+                  <input
+                    type="text"
+                    value={newDeposit}
+                    onChange={(e) => setNewDeposit(e.target.value)}
+                    placeholder="50,000"
+                    className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-gray-300"
+                  />
+                </div>
+              </div>
+
+              <label className="inline-flex items-center gap-2 text-xs font-semibold text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={newNoBrokerage}
+                  onChange={(e) => setNewNoBrokerage(e.target.checked)}
+                  className="rounded border-gray-300 text-[#1B2A4A] focus:ring-[#E59A38]"
+                />
+                <span>Show &ldquo;No brokerage&rdquo; badge under price</span>
+              </label>
+
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">Description</label>
                 <textarea
@@ -1142,6 +1233,49 @@ export default function AdminPage() {
                   />
                 </div>
               </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Size (sq ft)</label>
+                  <input
+                    type="text"
+                    value={editAreaSqft}
+                    onChange={(e) => setEditAreaSqft(e.target.value)}
+                    placeholder="1,150 sq ft"
+                    className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-gray-300"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Floor</label>
+                  <input
+                    type="text"
+                    value={editFloor}
+                    onChange={(e) => setEditFloor(e.target.value)}
+                    placeholder="4th floor"
+                    className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-gray-300"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Deposit (₹)</label>
+                  <input
+                    type="text"
+                    value={editDeposit}
+                    onChange={(e) => setEditDeposit(e.target.value)}
+                    placeholder="50,000"
+                    className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-gray-300"
+                  />
+                </div>
+              </div>
+
+              <label className="inline-flex items-center gap-2 text-xs font-semibold text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editNoBrokerage}
+                  onChange={(e) => setEditNoBrokerage(e.target.checked)}
+                  className="rounded border-gray-300 text-[#1B2A4A] focus:ring-[#E59A38]"
+                />
+                <span>Show &ldquo;No brokerage&rdquo; under price</span>
+              </label>
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">Description</label>

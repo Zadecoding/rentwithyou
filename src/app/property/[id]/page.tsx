@@ -11,7 +11,12 @@ import {
   getCachedPropertySync,
   getCachedPropertiesSync,
 } from '@/lib/propertyStore';
-import { BRAND, getWhatsAppLink } from '@/lib/constants';
+import {
+  BRAND,
+  getWhatsAppLink,
+  formatRupeeLabel,
+  parsePropertySpecs,
+} from '@/lib/constants';
 import { useWishlist } from '@/context/WishlistContext';
 import PropertyCard from '@/components/PropertyCard';
 import {
@@ -111,11 +116,8 @@ export default function PropertyDetailPage() {
 
   const whatsappMessage = `Hi Rent With You, I am interested in Property ID: [${property.property_code}] - ${property.title} in ${property.area}. Please share details and arrange a visit.`;
 
-  // Filter out any legacy metadata lines from description if present
-  const cleanDescription = (property.description || '')
-    .replace(/Listed by:\s*[^|\n]+(\s*\|\s*)?/gi, '')
-    .replace(/Property ID:\s*[^\n|]+/gi, '')
-    .trim();
+  const specs = parsePropertySpecs(property);
+  const cleanDescription = specs.cleanDescription;
 
   return (
     <div className="w-full max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 2xl:px-16 py-6">
@@ -264,19 +266,31 @@ export default function PropertyDetailPage() {
           </div>
 
           {/* Price */}
-          <div className="py-2 border-y border-gray-100 flex items-baseline justify-between">
+          <div className="py-3 border-y border-gray-100 flex items-baseline justify-between gap-3">
             <div>
               <span className="text-xs text-gray-500 block">Expected Price</span>
-              <span className="text-2xl sm:text-3xl font-black text-[#1B2A4A]">
-                {property.price_label}
+              <span className="font-sans text-2xl sm:text-3xl font-extrabold text-[#1B2A4A]">
+                {formatRupeeLabel(property.price_label)}
               </span>
+              {(specs.deposit || specs.no_brokerage || property.listed_by_role === 'Owner') && (
+                <span className="text-xs text-gray-500 font-medium block mt-1">
+                  {[
+                    specs.deposit
+                      ? `Deposit ${specs.deposit.startsWith('₹') ? specs.deposit : `₹${specs.deposit.replace(/^Rs\.?\s*/i, '')}`}`
+                      : null,
+                    specs.no_brokerage || property.listed_by_role === 'Owner' ? 'No brokerage' : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+              )}
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 shrink-0">
               Verified Listing
             </span>
           </div>
 
-          {/* 2x2 Key Fact Cards (Matches Wireframe Page 7) */}
+          {/* Key Fact Cards */}
           <div className="grid grid-cols-2 gap-3">
             {/* 1. Type */}
             <div className="bg-[#FAF8F5] p-3.5 rounded-2xl border border-gray-200/80">
@@ -311,12 +325,36 @@ export default function PropertyDetailPage() {
             {/* 4. Available from */}
             <div className="bg-[#FAF8F5] p-3.5 rounded-2xl border border-gray-200/80">
               <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
-                Available from
+                Availability
               </span>
               <span className="text-sm sm:text-base font-extrabold text-[#1B2A4A] mt-1 block">
-                {property.available_from || 'Immediate'}
+                {!property.available_from || property.available_from === 'Immediate'
+                  ? 'Ready to move'
+                  : property.available_from}
               </span>
             </div>
+
+            {specs.area_sqft && (
+              <div className="bg-[#FAF8F5] p-3.5 rounded-2xl border border-gray-200/80">
+                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
+                  Size
+                </span>
+                <span className="text-sm sm:text-base font-extrabold text-[#1B2A4A] mt-1 block">
+                  {specs.area_sqft}
+                </span>
+              </div>
+            )}
+
+            {specs.floor && (
+              <div className="bg-[#FAF8F5] p-3.5 rounded-2xl border border-gray-200/80">
+                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">
+                  Floor
+                </span>
+                <span className="text-sm sm:text-base font-extrabold text-[#1B2A4A] mt-1 block">
+                  {specs.floor}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Description */}

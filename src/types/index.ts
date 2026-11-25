@@ -37,6 +37,10 @@ export interface Property {
   landmark?: string;
   available_from: string;
   description: string;
+  area_sqft?: string;
+  floor?: string;
+  deposit?: string;
+  no_brokerage?: boolean;
   images: string[];
   badge?: PropertyBadge;
   listed_by_role: ListedByRole;

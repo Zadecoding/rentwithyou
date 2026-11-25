@@ -26,25 +26,25 @@ export default function FurnitureModal({ isOpen, onClose }: FurnitureModalProps)
       id: 'full_home',
       name: 'Full Home Package (1/2/3 BHK)',
       desc: 'Beds, wardrobes, sofa, dining table, fridge & appliances',
-      price: 'From Rs. 3,499 / mo',
+      price: 'From ₹3,499 / mo',
     },
     {
       id: 'bedroom',
       name: 'Master Bedroom Set',
       desc: 'King size bed, Ortho mattress, bedside tables, 3-door wardrobe',
-      price: 'From Rs. 1,499 / mo',
+      price: 'From ₹1,499 / mo',
     },
     {
       id: 'living',
       name: 'Living Room Essentials',
       desc: 'L-shape sofa, coffee table, TV console unit, floor rug',
-      price: 'From Rs. 1,899 / mo',
+      price: 'From ₹1,899 / mo',
     },
     {
       id: 'wfh',
       name: 'Work-From-Home Combo',
       desc: 'Ergonomic mesh chair, motorized standing desk, bookshelf',
-      price: 'From Rs. 899 / mo',
+      price: 'From ₹899 / mo',
     },
   ];
 
