@@ -155,15 +155,18 @@ export default function HomePage() {
     <div className="w-full bg-[#FFFFFF]">
       {/* 1. HERO SECTION (Steady Confident Headline + Shorter Search + 70/20/10 Color Restraint) */}
       <section className="relative px-3 sm:px-6 lg:px-8 xl:px-10 pt-4 pb-6">
-        <div className="w-full max-w-[1760px] mx-auto rounded-3xl bg-gradient-to-br from-[#121c33] via-[#1B2A4A] to-[#16223b] text-white overflow-hidden shadow-xl relative px-5 py-10 sm:py-16 sm:px-12 xl:px-16 2xl:px-20 border border-white/10">
-          {/* Architectural Background Texture */}
-          <div
-            className="absolute inset-0 opacity-10 bg-cover bg-center pointer-events-none mix-blend-overlay"
-            style={{
-              backgroundImage:
-                "url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1600&auto=format&fit=crop&q=80')",
-            }}
+        <div className="w-full max-w-[1760px] mx-auto rounded-3xl bg-[#121c33] text-white overflow-hidden shadow-xl relative px-5 py-10 sm:py-16 sm:px-12 xl:px-16 2xl:px-20 border border-white/10">
+          {/* Hero Background Home Image */}
+          <Image
+            src="/images/hero-home.jpg"
+            alt="Luxury modern home in Gurgaon"
+            fill
+            priority
+            unoptimized
+            className="object-cover object-center pointer-events-none"
           />
+          {/* Balanced Navy Gradient Overlay for Readability & Brand Look */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#121c33]/80 via-[#1B2A4A]/70 to-[#121c33]/85 pointer-events-none" />
 
           <div className="relative z-10 max-w-4xl xl:max-w-5xl mx-auto text-center">
             {/* Subtle Verification Badge */}
